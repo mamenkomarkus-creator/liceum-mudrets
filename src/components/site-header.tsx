@@ -30,11 +30,43 @@ export function SiteHeader() {
   const [compact, setCompact] = useState(false);
   const pathname = usePathname();
 
+  // The header shrinks when you scroll down. Shrinking changes the page height and the browser then nudges the
+  // scroll position, so a single threshold flips back and forth ("jitter"). Hence two thresholds (hysteresis)
+  // that are further apart than the height change, plus a short lock right after every switch.
   useEffect(() => {
-    const onScroll = () => setCompact(window.scrollY > 40);
-    onScroll();
+    const SHRINK_AT = 160;
+    const EXPAND_AT = 24;
+    const LOCK_MS = 450;
+    let isCompact = false;
+    let locked = false;
+    let lockTimer = 0;
+    let frame = 0;
+
+    const evaluate = () => {
+      frame = 0;
+      if (locked) return;
+      const y = window.scrollY;
+      const next = isCompact ? y > EXPAND_AT : y > SHRINK_AT;
+      if (next === isCompact) return;
+      isCompact = next;
+      setCompact(next);
+      locked = true;
+      lockTimer = window.setTimeout(() => {
+        locked = false;
+        evaluate();
+      }, LOCK_MS);
+    };
+    const onScroll = () => {
+      if (!frame) frame = window.requestAnimationFrame(evaluate);
+    };
+
+    evaluate();
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.clearTimeout(lockTimer);
+      window.cancelAnimationFrame(frame);
+    };
   }, []);
 
   return (

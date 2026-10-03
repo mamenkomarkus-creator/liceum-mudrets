@@ -20,7 +20,7 @@ npm run lint && npm run typecheck
 
 1. Завантажте проєкт у GitHub-репозиторій і підключіть його у Vercel («Add New → Project»).
 2. У налаштуваннях проєкту додайте змінні середовища (див. `.env.example`):
-   - `NEXT_PUBLIC_SITE_URL` — адреса сайту без `/` в кінці, наприклад `https://liceum-mudrets.example`;
+   - `NEXT_PUBLIC_SITE_URL` — адреса сайту без `/` в кінці, `https://liceum-mudrets.com.ua`;
    - `NEXT_PUBLIC_EDITORIAL_EMAIL` — пошта, на яку читачі надсилають статті.
 3. Натисніть **Deploy**. Підключіть власний домен у розділі Domains і **після цього** змініть
    `NEXT_PUBLIC_SITE_URL` на справжню адресу та перезберіть сайт — від неї залежать `sitemap.xml`,

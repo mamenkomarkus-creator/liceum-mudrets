@@ -171,7 +171,12 @@ export default async function ArticlePage({ params }: { params: Promise<{ id: st
 
         <div className="prose-article mt-10">
           {parseContentBlocks(article.content, mergedImages, (image) => (
-            <ArticleImage src={image.src} caption={image.caption} alt={image.alt} fit={image.fit} />
+            <ArticleImage
+              src={image.src}
+              caption={image.caption}
+              alt={image.alt ?? (image.caption ? undefined : `Ілюстрація до матеріалу «${article.title}»`)}
+              fit={image.fit}
+            />
           ), { hasFile, speakers: article.speakers, embeds: { "book-dedication": <BookReveal />, "book-illustrations": <BookIllustrations />, "book-back": <BookBack />,
           "man-program": <ProgramLeaflet />,
           "deck-ns2026": (

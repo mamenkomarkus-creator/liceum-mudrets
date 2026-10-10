@@ -72,9 +72,25 @@ export function SiteFooter() {
           </nav>
         </div>
 
-        <div className="mt-14 border-t border-white/15 pt-6 text-center text-sm text-white/60">
-          © {new Date().getFullYear()} «Ліцейський мудрець» <span aria-hidden>•</span> Біла Церква, Київська область{" "}
-          <span aria-hidden>•</span> Усі права захищено
+        <div className="mt-14 border-t border-white/15 pt-6 text-center text-sm text-white/70">
+          <nav aria-label="Правова інформація" className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
+            <Link href="/privacy" className="underline-offset-4 transition-colors hover:text-white hover:underline">
+              Політика конфіденційності
+            </Link>
+            <Link href="/terms" className="underline-offset-4 transition-colors hover:text-white hover:underline">
+              Умови використання
+            </Link>
+            <Link href="/terms#accessibility" className="underline-offset-4 transition-colors hover:text-white hover:underline">
+              Доступність
+            </Link>
+          </nav>
+          <p className="mt-4">
+            Видавець: Білоцерківський академічний ліцей «Мала академія наук», 09107, Київська обл., м. Біла Церква,
+            вул. Павліченко, 30 <span aria-hidden>•</span> (0456) 39-41-31
+          </p>
+          <p className="mt-2">
+            © {new Date().getFullYear()} «Ліцейський мудрець» <span aria-hidden>•</span> Усі права захищено
+          </p>
         </div>
       </div>
 

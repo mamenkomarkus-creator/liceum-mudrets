@@ -67,6 +67,29 @@ export default function ContactsPage() {
       </div>
 
       <div className="mt-6 rounded-xl border border-border bg-card p-6">
+        <h2 className="font-display text-xl font-bold text-foreground mb-3">Реквізити видавця</h2>
+        <dl className="grid gap-x-6 gap-y-2 text-foreground/85 sm:grid-cols-[11rem_1fr]">
+          <dt className="text-muted-foreground">Видання</dt>
+          <dd>«Ліцейський мудрець», засноване у листопаді 1998 року</dd>
+          <dt className="text-muted-foreground">Видавець</dt>
+          <dd>Білоцерківський академічний ліцей «Мала академія наук»</dd>
+          <dt className="text-muted-foreground">Адреса</dt>
+          <dd>09107, Київська обл., м. Біла Церква, вул. Павліченко, 30</dd>
+          <dt className="text-muted-foreground">Телефон</dt>
+          <dd>(0456) 39-41-31</dd>
+          <dt className="text-muted-foreground">Ел. пошта</dt>
+          <dd>{EDITORIAL_EMAIL}</dd>
+          <dt className="text-muted-foreground">Сайт</dt>
+          <dd>liceum-mudrets.com.ua</dd>
+        </dl>
+        <p className="mt-4 text-sm text-muted-foreground">
+          Правила використання сайту та обробки даних — в{" "}
+          <Link href="/terms" className="text-primary underline underline-offset-2">Умовах використання</Link> і{" "}
+          <Link href="/privacy" className="text-primary underline underline-offset-2">Політиці конфіденційності</Link>.
+        </p>
+      </div>
+
+      <div className="mt-6 rounded-xl border border-border bg-card p-6">
         <h2 className="font-display text-xl font-bold text-foreground mb-3">Стати автором</h2>
         <p className="text-muted-foreground leading-relaxed">
           Хочете долучитися до створення газети? Ми завжди раді новим авторам! Надсилайте свої статті, репортажі,

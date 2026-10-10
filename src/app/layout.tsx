@@ -4,6 +4,7 @@ import { Toaster } from "sonner";
 import "./globals.css";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { CookieNotice } from "@/components/cookie-notice";
 import { MotionProvider } from "@/components/motion-provider";
 import { SITE_URL } from "@/lib/site";
 
@@ -76,6 +77,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </main>
           <SiteFooter />
         </MotionProvider>
+        <CookieNotice />
         <Toaster position="bottom-center" richColors closeButton />
       </body>
     </html>

@@ -48,7 +48,8 @@ npm run lint && npm run typecheck
 
 Усі змінні описано в `.env.example`.
 
-1. **Storage → Create → Blob**, тип **Private**, підключіть до проєкту — з'явиться `BLOB_READ_WRITE_TOKEN`.
+1. **Storage → Create → Blob**, тип **Private**, підключіть до проєкту — з'являться `BLOB_STORE_ID` і
+   `BLOB_WEBHOOK_PUBLIC_KEY` (у старіших сховищах — `BLOB_READ_WRITE_TOKEN`; підходить будь-який варіант).
 2. Паролі: для кожної людини виконайте `npm run redakciya:password -- "її пароль"` і додайте змінну `REDAKCIYA_USERS`
    (JSON-масив: `login`, `name`, `role` — `chief` або `editor`, `password` — отриманий хеш). Додайте `REDAKCIYA_SECRET`
    (випадковий рядок, наприклад з `openssl rand -base64 24`).

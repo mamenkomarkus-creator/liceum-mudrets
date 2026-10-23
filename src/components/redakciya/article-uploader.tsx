@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { registerArticleAction } from "@/app/redakciya/actions";
 import { fileExtension, randomId, sourcePath } from "@/lib/redakciya/upload-paths";
 import { Dropzone } from "./dropzone";
-import { uploadToDrafts, type StorageMode } from "./upload";
+import { uploadToDrafts, type UploadFlow } from "./upload";
 
 interface Job {
   key: string;
@@ -18,7 +18,7 @@ interface Job {
 }
 
 /** Every Word or PDF file dropped here becomes a separate article of the issue. */
-export function ArticleUploader({ issue, storage }: { issue: number; storage: StorageMode }) {
+export function ArticleUploader({ issue, storage }: { issue: number; storage: UploadFlow }) {
   const router = useRouter();
   const [jobs, setJobs] = useState<Job[]>([]);
   const busy = jobs.some((j) => j.state === "uploading");

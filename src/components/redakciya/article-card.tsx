@@ -20,7 +20,7 @@ import type { DraftArticle } from "@/lib/redakciya/store";
 import { fileExtension, photoPath, PHOTO_EXTENSIONS, randomId } from "@/lib/redakciya/upload-paths";
 import { Badge, formatDate, SecondaryButton, PrimaryButton } from "./ui";
 import { Dropzone } from "./dropzone";
-import { uploadToDrafts, type StorageMode } from "./upload";
+import { uploadToDrafts, type UploadFlow } from "./upload";
 
 export function ArticleCard({
   article,
@@ -34,7 +34,7 @@ export function ArticleCard({
   position: number;
   isFirst: boolean;
   isLast: boolean;
-  storage: StorageMode;
+  storage: UploadFlow;
   claude: boolean;
 }) {
   const router = useRouter();

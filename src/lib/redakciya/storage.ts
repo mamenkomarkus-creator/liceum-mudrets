@@ -3,13 +3,25 @@ import path from "node:path";
 import { del, get, list, put } from "@vercel/blob";
 
 /**
- * Where uploaded articles and drafts live. On Vercel: a private Blob store (BLOB_READ_WRITE_TOKEN).
- * Without the token (local development) everything goes to the git-ignored `.redakciya/` folder.
+ * Where uploaded articles and drafts live. On Vercel: a private Blob store, reached either with
+ * BLOB_READ_WRITE_TOKEN or (stores connected the newer way) with the project's OIDC token + BLOB_STORE_ID.
+ * Without either (local development) everything goes to the git-ignored `.redakciya/` folder.
  */
 export type StorageMode = "blob" | "local";
 
 export function storageMode(): StorageMode {
-  return process.env.BLOB_READ_WRITE_TOKEN ? "blob" : "local";
+  return process.env.BLOB_READ_WRITE_TOKEN || process.env.BLOB_STORE_ID ? "blob" : "local";
+}
+
+/**
+ * How the browser uploads to Blob: a client token needs a read-write token; OIDC-connected stores
+ * hand out presigned URLs instead.
+ */
+export type UploadFlow = "token" | "presigned" | "local";
+
+export function uploadFlow(): UploadFlow {
+  if (process.env.BLOB_READ_WRITE_TOKEN) return "token";
+  return process.env.BLOB_STORE_ID ? "presigned" : "local";
 }
 
 const LOCAL_ROOT = path.join(process.cwd(), ".redakciya");

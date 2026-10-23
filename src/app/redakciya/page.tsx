@@ -15,7 +15,7 @@ export default async function IssuesPage() {
   const counts = await Promise.all(issues.map((i) => listArticles(i.number)));
 
   const warnings = [
-    storageMode() === "local" && process.env.VERCEL ? "Не підключено сховище Vercel Blob (BLOB_READ_WRITE_TOKEN) — файли не збережуться." : null,
+    storageMode() === "local" && process.env.VERCEL ? "Не підключено сховище Vercel Blob (BLOB_STORE_ID або BLOB_READ_WRITE_TOKEN) — файли не збережуться." : null,
     !claudeEnabled() ? "Не вказано ANTHROPIC_API_KEY — статті оброблятимуться без Claude: лише текст, назву й рубрику доведеться виправити вручну." : null,
     publishMode() === "local" && process.env.VERCEL ? "Не вказано GITHUB_TOKEN — публікація випуску не працюватиме." : null,
   ].filter(Boolean);

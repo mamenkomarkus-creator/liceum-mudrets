@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 import { requireEditorPage } from "@/lib/redakciya/auth";
 import { getIssue, listArticles } from "@/lib/redakciya/store";
-import { storageMode } from "@/lib/redakciya/storage";
+import { uploadFlow } from "@/lib/redakciya/storage";
 import { claudeEnabled } from "@/lib/redakciya/claude";
 import { Badge, formatDate } from "@/components/redakciya/ui";
 import { IssueSettings } from "@/components/redakciya/issue-settings";
@@ -58,7 +58,7 @@ export default async function IssuePage({ params }: { params: Promise<{ n: strin
         <h2 id="upload-heading" className="sr-only">
           Додати статті
         </h2>
-        <ArticleUploader issue={issue.number} storage={storageMode()} />
+        <ArticleUploader issue={issue.number} storage={uploadFlow()} />
       </section>
 
       <section className="mt-8" aria-labelledby="articles-heading">
@@ -74,7 +74,7 @@ export default async function IssuePage({ params }: { params: Promise<{ n: strin
                   position={index + 1}
                   isFirst={index === 0}
                   isLast={index === articles.length - 1}
-                  storage={storageMode()}
+                  storage={uploadFlow()}
                   claude={claudeEnabled()}
                 />
               </li>

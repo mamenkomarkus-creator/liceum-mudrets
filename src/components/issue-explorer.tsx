@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Article } from "@/lib/types";
-import { issueTitle } from "@/lib/data";
+import { issueTitle } from "@/lib/issues";
 import { ArticleCard } from "./article-card";
 import { CategoryFilter } from "./category-filter";
 

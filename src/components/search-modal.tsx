@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { Search, X } from "lucide-react";
-import { articles } from "@/lib/data";
+import type { SearchEntry } from "@/lib/issues";
 import { useDialogFocus } from "@/lib/use-dialog-focus";
 
 export function SearchModal({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -31,13 +31,28 @@ export function SearchModal({ open, onClose }: { open: boolean; onClose: () => v
     };
   }, [open, onClose]);
 
+  // The list of articles is fetched the first time the search opens, so pages do not carry it in their scripts.
+  const [index, setIndex] = useState<SearchEntry[] | null>(null);
+  const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    if (!open || index) return;
+    let cancelled = false;
+    fetch("/search-index.json")
+      .then((r) => (r.ok ? (r.json() as Promise<SearchEntry[]>) : Promise.reject(new Error(String(r.status)))))
+      .then((data) => !cancelled && setIndex(data))
+      .catch(() => !cancelled && setFailed(true));
+    return () => {
+      cancelled = true;
+    };
+  }, [open, index]);
+
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return [];
-    return articles
-      .filter((a) => a.title.toLowerCase().includes(q) || a.description.toLowerCase().includes(q))
+    if (!q || !index) return [];
+    return index
+      .filter((a) => a.title.toLowerCase().includes(q) || a.description.toLowerCase().includes(q) || a.author?.toLowerCase().includes(q))
       .slice(0, 8);
-  }, [query]);
+  }, [query, index]);
 
   return (
     <AnimatePresence>
@@ -69,7 +84,7 @@ export function SearchModal({ open, onClose }: { open: boolean; onClose: () => v
                 aria-label="Пошуковий запит"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Пошук статей за назвою чи описом…"
+                placeholder="Пошук статей за назвою, описом чи автором…"
                 className="flex-1 bg-transparent outline-none text-sm text-foreground placeholder:text-muted-foreground"
               />
               <button
@@ -82,7 +97,11 @@ export function SearchModal({ open, onClose }: { open: boolean; onClose: () => v
               </button>
             </div>
             <div className="max-h-96 overflow-y-auto">
-              {query.trim() && results.length === 0 ? (
+              {query.trim() && !index ? (
+                <p className="px-4 py-6 text-sm text-center text-muted-foreground">
+                  {failed ? "Не вдалося завантажити пошук. Спробуйте пізніше." : "Завантаження…"}
+                </p>
+              ) : query.trim() && results.length === 0 ? (
                 <p className="px-4 py-6 text-sm text-center text-muted-foreground">Нічого не знайдено</p>
               ) : (
                 results.map((a) => (

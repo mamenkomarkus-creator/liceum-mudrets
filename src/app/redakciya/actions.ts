@@ -2,11 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { CATEGORIES, ISSUES } from "@/lib/data";
+import { ISSUES } from "@/lib/data";
 import { logIn, logOut, requireChief, requireEditor } from "@/lib/redakciya/auth";
 import { processArticle } from "@/lib/redakciya/process";
 import { publishIssue } from "@/lib/redakciya/publish";
 import { removeFiles } from "@/lib/redakciya/storage";
+import { audit } from "@/lib/redakciya/security";
 import {
   assertId,
   deleteArticle,
@@ -22,6 +23,7 @@ import {
   type DraftArticle,
 } from "@/lib/redakciya/store";
 import { fileExtension, isAllowedUploadPath, sourcePath, photoPath } from "@/lib/redakciya/upload-paths";
+import { articleFields, captions as checkCaptions, issueNumber, text } from "@/lib/redakciya/validate";
 
 export type ActionResult = { ok: true; message?: string } | { ok: false; error: string };
 
@@ -37,17 +39,14 @@ async function attempt(work: () => Promise<string | void>): Promise<ActionResult
 const issuePath = (n: number) => `/redakciya/vypusk/${n}`;
 
 async function loadArticle(issue: number, id: string): Promise<DraftArticle> {
-  const article = await getArticle(issue, assertId(id));
+  const article = await getArticle(issueNumber(issue), assertId(text(id, 32, "id")));
   if (!article) throw new Error("Статтю не знайдено — можливо, її вже видалили");
   return article;
 }
 
 export async function loginAction(_prev: string | null, form: FormData): Promise<string | null> {
-  const editor = await logIn(String(form.get("login") ?? ""), String(form.get("password") ?? ""));
-  if (!editor) {
-    await new Promise((r) => setTimeout(r, 600));
-    return "Невірний логін або пароль";
-  }
+  const result = await logIn(String(form.get("login") ?? "").slice(0, 100), String(form.get("password") ?? "").slice(0, 200));
+  if (!result.ok) return result.error;
   redirect("/redakciya");
 }
 
@@ -59,9 +58,9 @@ export async function logoutAction() {
 export async function createIssueAction(_prev: string | null, form: FormData): Promise<string | null> {
   const editor = await requireEditor();
   const number = Number(form.get("number"));
-  const dateLabel = String(form.get("dateLabel") ?? "").trim();
-  const tagline = String(form.get("tagline") ?? "").trim();
-  if (!Number.isInteger(number) || number < 1) return "Вкажіть номер випуску";
+  const dateLabel = String(form.get("dateLabel") ?? "").trim().slice(0, 60);
+  const tagline = String(form.get("tagline") ?? "").trim().slice(0, 500);
+  if (!Number.isInteger(number) || number < 1 || number > 9999) return "Вкажіть номер випуску";
   if (!dateLabel) return "Вкажіть місяць випуску, наприклад «Листопад 2026»";
   if (await getIssue(number)) return `Випуск №${number} уже є в редакції`;
   // Publishing replaces all articles of that number, so an issue made by hand must not be overwritten by accident.
@@ -79,10 +78,13 @@ export async function createIssueAction(_prev: string | null, form: FormData): P
 export async function updateIssueAction(n: number, values: { dateLabel: string; tagline: string }) {
   return attempt(async () => {
     await requireEditor();
+    n = issueNumber(n);
+    const dateLabel = text(values?.dateLabel, 60, "Місяць").trim();
+    const tagline = text(values?.tagline ?? "", 500, "Опис випуску").trim();
     const issue = await getIssue(n);
     if (!issue) throw new Error("Випуск не знайдено");
-    if (!values.dateLabel.trim()) throw new Error("Місяць випуску не може бути порожнім");
-    await saveIssue({ ...issue, dateLabel: values.dateLabel.trim(), tagline: values.tagline.trim() || undefined });
+    if (!dateLabel) throw new Error("Місяць випуску не може бути порожнім");
+    await saveIssue({ ...issue, dateLabel, tagline: tagline || undefined });
     revalidatePath(issuePath(n));
     return "Збережено";
   });
@@ -90,8 +92,10 @@ export async function updateIssueAction(n: number, values: { dateLabel: string; 
 
 export async function deleteIssueAction(n: number) {
   const result = await attempt(async () => {
-    await requireChief();
+    const editor = await requireChief();
+    n = issueNumber(n);
     await deleteIssue(n);
+    audit("issue_deleted", { issue: n, login: editor.login });
   });
   if (result.ok) redirect("/redakciya");
   return result;
@@ -100,6 +104,9 @@ export async function deleteIssueAction(n: number) {
 export async function registerArticleAction(n: number, upload: { id: string; name: string; size: number }) {
   return attempt(async () => {
     const editor = await requireEditor();
+    n = issueNumber(n);
+    text(upload?.name, 255, "Назва файлу");
+    if (typeof upload.size !== "number" || upload.size < 0) throw new Error("Невірний розмір файлу");
     if (!(await getIssue(n))) throw new Error("Випуск не знайдено");
     const ext = fileExtension(upload.name);
     if (ext !== "docx" && ext !== "pdf") throw new Error("Підтримуються лише файли .docx і .pdf");
@@ -123,6 +130,8 @@ export async function registerArticleAction(n: number, upload: { id: string; nam
 export async function addPhotosAction(n: number, id: string, photos: { id: string; name: string }[]) {
   return attempt(async () => {
     const editor = await requireEditor();
+    if (!Array.isArray(photos) || photos.length > 50) throw new Error("Забагато фото за раз");
+    photos.forEach((p) => text(p?.name, 255, "Назва фото"));
     const article = await loadArticle(n, id);
     const added = photos.map((p) => {
       const path = photoPath(n, article.id, assertId(p.id), fileExtension(p.name));
@@ -137,6 +146,7 @@ export async function addPhotosAction(n: number, id: string, photos: { id: strin
 export async function deletePhotoAction(n: number, id: string, photoId: string) {
   return attempt(async () => {
     const editor = await requireEditor();
+    text(photoId, 32, "id фото");
     const article = await loadArticle(n, id);
     const photo = article.photos.find((p) => p.id === photoId);
     if (!photo) return;
@@ -162,6 +172,8 @@ export async function deletePhotoAction(n: number, id: string, photoId: string) 
 export async function deleteArticleAction(n: number, id: string) {
   return attempt(async () => {
     await requireEditor();
+    n = issueNumber(n);
+    assertId(text(id, 32, "id"));
     await deleteArticle(n, id);
     revalidatePath(issuePath(n));
   });
@@ -170,6 +182,8 @@ export async function deleteArticleAction(n: number, id: string) {
 export async function moveArticleAction(n: number, id: string, direction: -1 | 1) {
   return attempt(async () => {
     await requireEditor();
+    n = issueNumber(n);
+    if (direction !== -1 && direction !== 1) throw new Error("Невірний напрямок");
     const list = await listArticles(n);
     const index = list.findIndex((a) => a.id === id);
     const other = list[index + direction];
@@ -198,6 +212,7 @@ export async function processArticleAction(n: number, id: string) {
 export async function saveNotesAction(n: number, id: string, notes: string) {
   return attempt(async () => {
     await requireEditor();
+    text(notes, 2000, "Примітка");
     const article = await loadArticle(n, id);
     await saveArticle({ ...article, notes: notes.slice(0, 2000) });
     revalidatePath(issuePath(n));
@@ -207,6 +222,7 @@ export async function saveNotesAction(n: number, id: string, notes: string) {
 export async function setCheckedAction(n: number, id: string, checked: boolean) {
   return attempt(async () => {
     const editor = await requireEditor();
+    if (typeof checked !== "boolean") throw new Error("Невірне значення");
     const article = await loadArticle(n, id);
     if (checked && article.status !== "ready") throw new Error("Спершу обробіть статтю");
     await saveArticle({ ...article, checkedBy: checked ? editor.name : undefined });
@@ -223,8 +239,9 @@ export async function saveArticleAction(
   return attempt(async () => {
     const editor = await requireEditor();
     const article = await loadArticle(n, id);
+    fields = articleFields(fields);
+    captions = checkCaptions(captions);
     if (!fields.title.trim()) throw new Error("Заголовок не може бути порожнім");
-    if (!CATEGORIES.includes(fields.category as (typeof CATEGORIES)[number])) throw new Error("Оберіть рубрику зі списку");
     const clean: ArticleFields = {
       title: fields.title.trim(),
       description: fields.description.trim(),
@@ -282,7 +299,9 @@ export async function startManuallyAction(n: number, id: string) {
 export async function publishIssueAction(n: number) {
   return attempt(async () => {
     const editor = await requireChief();
+    n = issueNumber(n);
     const issue = await publishIssue(n, editor);
+    audit("issue_published", { issue: n, login: editor.login, ref: issue.publishedRef });
     revalidatePath(issuePath(n));
     revalidatePath("/redakciya");
     return issue.publishedRef === "local"

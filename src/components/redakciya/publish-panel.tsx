@@ -2,7 +2,7 @@
 
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Send, Trash2 } from "lucide-react";
+import { Download, Send, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { deleteIssueAction, publishIssueAction } from "@/app/redakciya/actions";
 import { PrimaryButton, SecondaryButton } from "./ui";
@@ -53,6 +53,12 @@ export function PublishPanel({
         Статей: {total} · оброблено: {ready} · перевірено: {checked}.{" "}
         {!total ? "Додайте хоча б одну статтю." : ready < total ? "Обробіть усі статті, щоб опублікувати випуск." : "Усе готово до публікації."}
       </p>
+      <a
+        href={`/api/redakciya/archive/${issue}`}
+        className="mt-3 inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
+      >
+        <Download size={14} aria-hidden /> Завантажити архів випуску (усі файли, резервна копія)
+      </a>
       {isChief ? (
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <PrimaryButton type="button" onClick={publish} pending={pending} disabled={!canPublish}>

@@ -70,7 +70,7 @@ export function newId(): string {
 }
 
 export function assertId(id: string): string {
-  if (!/^[A-Za-z0-9]{4,32}$/.test(id)) throw new Error("Невірний ідентифікатор");
+  if (typeof id !== "string" || !/^[A-Za-z0-9]{4,32}$/.test(id)) throw new Error("Невірний ідентифікатор");
   return id;
 }
 

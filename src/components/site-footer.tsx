@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Lock } from "lucide-react";
 import { CATEGORIES, LATEST_ISSUE, getIssueMeta } from "@/lib/data";
 import { ScrollToTop } from "./scroll-to-top";
 
@@ -82,6 +82,14 @@ export function SiteFooter() {
             </Link>
             <Link href="/terms#accessibility" className="underline-offset-4 transition-colors hover:text-white hover:underline">
               Доступність
+            </Link>
+            <Link
+              href="/redakciya"
+              rel="nofollow"
+              className="inline-flex items-center gap-1.5 underline-offset-4 transition-colors hover:text-white hover:underline"
+            >
+              <Lock size={13} aria-hidden />
+              Керування
             </Link>
           </nav>
           <p className="mt-4">

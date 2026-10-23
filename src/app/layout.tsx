@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Playfair_Display, Inter, Montserrat, Oswald } from "next/font/google";
+import { Playfair_Display, Inter, Oswald } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
 import { SiteHeader } from "@/components/site-header";
@@ -12,13 +12,6 @@ import { SITE_URL } from "@/lib/site";
 const playfair = Playfair_Display({
   variable: "--font-playfair",
   subsets: ["latin", "cyrillic"],
-});
-
-const montserrat = Montserrat({
-  variable: "--font-montserrat",
-  subsets: ["latin", "cyrillic"],
-  style: ["normal", "italic"],
-  preload: false,
 });
 
 const oswald = Oswald({
@@ -66,7 +59,7 @@ export const viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="uk" className={`${playfair.variable} ${inter.variable} ${oswald.variable} ${montserrat.variable} h-full antialiased`}>
+    <html lang="uk" className={`${playfair.variable} ${inter.variable} ${oswald.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
         <a href="#main" className="skip-link">
           Перейти до змісту

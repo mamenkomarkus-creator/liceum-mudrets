@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import { CATEGORIES } from "@/lib/data";
+import { CATEGORIES } from "@/lib/issues";
 
 const STORAGE_KEY = "lm-vote-choice";
 

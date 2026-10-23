@@ -58,6 +58,16 @@ npm run lint && npm run typecheck
    `liceum-mudrets`, дозвіл **Contents: Read and write**. Плюс `GITHUB_REPO` і за потреби `GITHUB_BRANCH`.
 5. Перезберіть проєкт (Redeploy) — панель буде за адресою `https://<домен>/redakciya`.
 
+### Безпека панелі
+
+- Вхід: після 5 невдалих спроб логін блокується на 15 хв (і адреса — після 20). Сесія діє 14 днів;
+  «Вийти» завершує сесії цього редактора на всіх пристроях. Щоб розлогінити всіх, змініть `REDAKCIYA_SECRET`.
+- Журнал: входи, блокування, публікації й видалення пишуться в логи Vercel рядками `{"scope":"redakciya",…}`.
+- Резервна копія: «Завантажити архів випуску» на сторінці випуску віддає zip з усіма файлами й чернетками.
+- Content-Security-Policy поки в режимі Report-Only: порушення видно в логах Vercel як `{"scope":"csp",…}`.
+  Коли їх кілька днів немає, у `next.config.ts` замініть заголовок `Content-Security-Policy-Report-Only`
+  на `Content-Security-Policy`.
+
 Локально (`npm run dev`) панель працює й без Vercel: файли зберігаються в `.redakciya/`, а публікація записує
 файли прямо в проєкт — далі їх можна закомітити вручну. Для входу потрібні `REDAKCIYA_USERS` і `REDAKCIYA_SECRET`
 у `.env.local`.

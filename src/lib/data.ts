@@ -1,43 +1,10 @@
 import rawArticles from "@/data/articles.json";
-import rawIssues from "@/data/issues.json";
-import type { Article, Category } from "./types";
+import type { Article } from "./types";
+
+// Server-side access to the articles. Client components import from ./issues instead, which has no article texts.
+export { CATEGORIES, ISSUES, LATEST_ISSUE, getIssueMeta, issueTitle, issueShortMonth, type IssueMeta } from "./issues";
 
 export const articles = rawArticles as Article[];
-
-export const CATEGORIES: Category[] = [
-  "КОЛОНКА РЕДАКТОРА",
-  "ЛІЦЕЙ",
-  "ОБРІЇ",
-  "ДІАЛОГИ ПРО НЕСКОРЕНИХ",
-  "ВИПУСКНИКИ",
-  "ВСТУПНИКАМ",
-  "РАДИМО ПРОЧИТАТИ",
-];
-
-export interface IssueMeta {
-  number: number;
-  dateLabel: string;
-  tagline?: string;
-}
-
-// Kept in JSON so that publishing an issue from /redakciya can append to it with a plain commit.
-export const ISSUES: IssueMeta[] = rawIssues;
-
-export const LATEST_ISSUE = Math.max(...ISSUES.map((i) => i.number));
-
-export function getIssueMeta(issue: number): IssueMeta {
-  return ISSUES.find((i) => i.number === issue) ?? { number: issue, dateLabel: "" };
-}
-
-export function issueTitle(issue: number): string {
-  const meta = getIssueMeta(issue);
-  return `Випуск №${meta.number}${meta.dateLabel ? ` (${meta.dateLabel})` : ""}`;
-}
-
-/** First month of the issue's date range, for compact issue-switcher tabs. */
-export function issueShortMonth(issue: number): string {
-  return getIssueMeta(issue).dateLabel.split(/[\s–-]/)[0];
-}
 
 export function getArticlesByIssue(issue: number): Article[] {
   return articles.filter((a) => a.issue === issue).sort((a, b) => a.id - b.id);

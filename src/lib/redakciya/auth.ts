@@ -1,6 +1,8 @@
 import crypto from "node:crypto";
+import { cache } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { audit, clearFailures, clientIp, lockedForMinutes, recordFailure, revokeSessions, sessionsRevokedBefore } from "./security";
 
 export type EditorRole = "chief" | "editor";
 
@@ -16,7 +18,7 @@ interface EditorAccount extends Editor {
 }
 
 const COOKIE = "rd_session";
-const SESSION_DAYS = 30;
+const SESSION_DAYS = 14;
 
 /** Editors come from the REDAKCIYA_USERS env variable (JSON array), so access is managed in Vercel settings. */
 function accounts(): EditorAccount[] {
@@ -59,13 +61,28 @@ function sign(payload: string): string {
   return crypto.createHmac("sha256", secret()).update(payload).digest("base64url");
 }
 
-export async function logIn(login: string, password: string): Promise<Editor | null> {
+export type LoginResult = { ok: true; editor: Editor } | { ok: false; error: string };
+
+export async function logIn(login: string, password: string): Promise<LoginResult> {
+  const ip = await clientIp();
+  const locked = await lockedForMinutes(login, ip);
+  if (locked) {
+    audit("login_blocked", { login, ip });
+    return { ok: false, error: `Забагато невдалих спроб. Спробуйте через ${locked} хв.` };
+  }
+
   const account = accounts().find((a) => a.login.toLowerCase() === login.trim().toLowerCase());
   // Run scrypt even for unknown logins so the response time does not reveal which logins exist.
   const ok = verifyPassword(password, account?.password ?? hashPassword("dummy")) && !!account;
-  if (!ok || !account) return null;
+  if (!ok || !account) {
+    const nowLocked = await recordFailure(login, ip);
+    audit(nowLocked ? "login_locked" : "login_failed", { login, ip });
+    return { ok: false, error: nowLocked ? "Забагато невдалих спроб. Вхід заблоковано на 15 хв." : "Невірний логін або пароль" };
+  }
 
-  const payload = Buffer.from(JSON.stringify({ login: account.login, exp: Date.now() + SESSION_DAYS * 86_400_000 })).toString("base64url");
+  await clearFailures(login);
+  const now = Date.now();
+  const payload = Buffer.from(JSON.stringify({ login: account.login, iat: now, exp: now + SESSION_DAYS * 86_400_000 })).toString("base64url");
   (await cookies()).set(COOKIE, `${payload}.${sign(payload)}`, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -73,15 +90,26 @@ export async function logIn(login: string, password: string): Promise<Editor | n
     path: "/",
     maxAge: SESSION_DAYS * 86_400,
   });
-  return { login: account.login, name: account.name, role: account.role };
+  audit("login", { login: account.login, ip });
+  const editor = { login: account.login, name: account.name, role: account.role };
+  return { ok: true, editor };
 }
 
+/** Ends this session and every other session of the same editor (e.g. a forgotten laptop at school). */
 export async function logOut() {
+  const editor = await currentEditor();
+  if (editor) {
+    await revokeSessions(editor.login);
+    audit("logout", { login: editor.login, ip: await clientIp() });
+  }
   (await cookies()).delete(COOKIE);
 }
 
-/** Reads the session cookie. An editor removed from REDAKCIYA_USERS loses access at once. */
-export async function currentEditor(): Promise<Editor | null> {
+/**
+ * Reads the session cookie. An editor removed from REDAKCIYA_USERS, or one who logged out elsewhere,
+ * loses access at once. Cached per request: layout, page and actions share one check.
+ */
+export const currentEditor = cache(async (): Promise<Editor | null> => {
   if (!isConfigured()) return null;
   const value = (await cookies()).get(COOKIE)?.value;
   if (!value) return null;
@@ -91,14 +119,15 @@ export async function currentEditor(): Promise<Editor | null> {
   const given = Buffer.from(signature);
   if (expected.length !== given.length || !crypto.timingSafeEqual(expected, given)) return null;
   try {
-    const { login, exp } = JSON.parse(Buffer.from(payload, "base64url").toString()) as { login: string; exp: number };
-    if (Date.now() > exp) return null;
+    const { login, iat, exp } = JSON.parse(Buffer.from(payload, "base64url").toString()) as { login: string; iat?: number; exp: number };
+    if (Date.now() > exp || !iat) return null;
     const account = accounts().find((a) => a.login === login);
-    return account ? { login: account.login, name: account.name, role: account.role } : null;
+    if (!account || iat <= (await sessionsRevokedBefore(login))) return null;
+    return { login: account.login, name: account.name, role: account.role };
   } catch {
     return null;
   }
-}
+});
 
 /** For pages: sends visitors without a session to the login form. */
 export async function requireEditorPage(): Promise<Editor> {

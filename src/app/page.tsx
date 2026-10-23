@@ -1,13 +1,38 @@
-import { CATEGORIES, ISSUES, LATEST_ISSUE, getArticlesByIssue } from "@/lib/data";
+import fs from "node:fs";
+import path from "node:path";
+import type { Metadata } from "next";
+import { CATEGORIES, ISSUES, LATEST_ISSUE, getArticlesByIssue, getIssueMeta } from "@/lib/data";
 import { IssueExplorer } from "@/components/issue-explorer";
 import { VoteWidget } from "@/components/vote-widget";
 import { SubmitArticleCard } from "@/components/submit-article-card";
 import { Reveal } from "@/components/reveal";
 
+type HomeSearchParams = Promise<{ issue?: string; category?: string }>;
+
+export async function generateMetadata({ searchParams }: { searchParams: HomeSearchParams }): Promise<Metadata> {
+  const { issue } = await searchParams;
+  const number = Number(issue);
+  if (!ISSUES.some((i) => i.number === number)) return {};
+  const meta = getIssueMeta(number);
+  // The root layout's title template does not apply to the page of the same segment, so spell it out.
+  const title = `Випуск №${number} (${meta.dateLabel}) — Ліцейський мудрець`;
+  const description =
+    meta.tagline ?? `Читайте випуск №${number} електронної газети «Ліцейський мудрець» Білоцерківського академічного ліцею «МАН».`;
+  const cover = `/og/issue-${number}.jpg`;
+  const images = fs.existsSync(path.join(process.cwd(), "public", cover)) ? [{ url: cover, width: 1200, height: 630, alt: title }] : undefined;
+  return {
+    title: { absolute: title },
+    description,
+    alternates: { canonical: `/?issue=${number}` },
+    openGraph: { title, description, url: `/?issue=${number}`, images },
+    twitter: { card: "summary_large_image", title, description, images: images?.map((i) => i.url) },
+  };
+}
+
 export default async function Home({
   searchParams,
 }: {
-  searchParams: Promise<{ issue?: string; category?: string }>;
+  searchParams: HomeSearchParams;
 }) {
   const { issue, category } = await searchParams;
   const requestedIssue = Number(issue);

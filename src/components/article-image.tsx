@@ -5,17 +5,21 @@ export function ArticleImage({
   caption,
   alt,
   fit = "cover",
+  unoptimized,
 }: {
   src: string;
   caption?: string;
   alt?: string;
   fit?: "cover" | "contain" | "natural" | "small" | "plain" | "portrait";
+  /** For the editorial preview, whose pictures are private drafts the image optimizer cannot fetch. */
+  unoptimized?: boolean;
 }) {
   const text = alt ?? caption?.split("\n")[0] ?? "";
   return (
     <figure className="my-9">
       {fit === "portrait" ? (
         <Image
+          unoptimized={unoptimized}
           src={src}
           alt={text}
           width={0}
@@ -26,6 +30,7 @@ export function ArticleImage({
       ) : fit === "plain" ? (
         <div className="relative mx-auto h-[min(112vw,520px)] w-full">
           <Image
+            unoptimized={unoptimized}
             src={src}
             alt={text}
             fill
@@ -35,6 +40,7 @@ export function ArticleImage({
         </div>
       ) : fit === "small" ? (
         <Image
+          unoptimized={unoptimized}
           src={src}
           alt={text}
           width={0}
@@ -44,6 +50,7 @@ export function ArticleImage({
         />
       ) : fit === "natural" ? (
         <Image
+          unoptimized={unoptimized}
           src={src}
           alt={text}
           width={0}
@@ -54,6 +61,7 @@ export function ArticleImage({
       ) : fit === "contain" ? (
         <div className="relative h-[min(112vw,540px)] w-full overflow-hidden rounded-xl bg-muted">
           <Image
+            unoptimized={unoptimized}
             src={src}
             alt={text}
             fill
@@ -63,7 +71,7 @@ export function ArticleImage({
         </div>
       ) : (
         <div className="relative w-full overflow-hidden rounded-xl bg-muted" style={{ aspectRatio: "16 / 10" }}>
-          <Image src={src} alt={text} fill sizes="(max-width: 800px) 100vw, 760px" className="object-cover" />
+          <Image unoptimized={unoptimized} src={src} alt={text} fill sizes="(max-width: 800px) 100vw, 760px" className="object-cover" />
         </div>
       )}
       {caption ? (

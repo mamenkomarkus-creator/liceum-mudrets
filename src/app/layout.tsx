@@ -6,6 +6,7 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { CookieNotice } from "@/components/cookie-notice";
 import { MotionProvider } from "@/components/motion-provider";
+import { SiteChrome } from "@/components/site-chrome";
 import { SITE_URL } from "@/lib/site";
 
 const playfair = Playfair_Display({
@@ -71,13 +72,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           Перейти до змісту
         </a>
         <MotionProvider>
-          <SiteHeader />
+          <SiteChrome>
+            <SiteHeader />
+          </SiteChrome>
           <main id="main" className="flex-1">
             {children}
           </main>
-          <SiteFooter />
+          <SiteChrome>
+            <SiteFooter />
+          </SiteChrome>
         </MotionProvider>
-        <CookieNotice />
+        <SiteChrome>
+          <CookieNotice />
+        </SiteChrome>
         <Toaster position="bottom-center" richColors closeButton />
       </body>
     </html>

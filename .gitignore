@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# drafts of social media posts (not part of the site)
+/telegram-post/
+
+# drafts of the editorial panel in local mode (no Vercel Blob token)
+/.redakciya/

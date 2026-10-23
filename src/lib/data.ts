@@ -1,4 +1,5 @@
 import rawArticles from "@/data/articles.json";
+import rawIssues from "@/data/issues.json";
 import type { Article, Category } from "./types";
 
 export const articles = rawArticles as Article[];
@@ -19,16 +20,8 @@ export interface IssueMeta {
   tagline?: string;
 }
 
-export const ISSUES: IssueMeta[] = [
-  { number: 1, dateLabel: "Листопад 2025", tagline: "Перший випуск оновленого електронного видання" },
-  { number: 2, dateLabel: "Грудень 2025" },
-  { number: 3, dateLabel: "Січень 2026" },
-  { number: 4, dateLabel: "Лютий 2026" },
-  { number: 5, dateLabel: "Березень 2026" },
-  { number: 6, dateLabel: "Квітень 2026" },
-  { number: 7, dateLabel: "Травень – Червень 2026" },
-  { number: 8, dateLabel: "Вересень 2026" },
-];
+// Kept in JSON so that publishing an issue from /redakciya can append to it with a plain commit.
+export const ISSUES: IssueMeta[] = rawIssues;
 
 export const LATEST_ISSUE = Math.max(...ISSUES.map((i) => i.number));
 

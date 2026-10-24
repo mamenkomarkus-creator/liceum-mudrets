@@ -22,7 +22,7 @@ import {
   type ArticleFields,
   type DraftArticle,
 } from "@/lib/redakciya/store";
-import { fileExtension, isAllowedUploadPath, sourcePath, photoPath } from "@/lib/redakciya/upload-paths";
+import { authorPhotoPath, fileExtension, isAllowedUploadPath, sourcePath, photoPath } from "@/lib/redakciya/upload-paths";
 import { articleFields, captions as checkCaptions, issueNumber, text } from "@/lib/redakciya/validate";
 
 export type ActionResult = { ok: true; message?: string } | { ok: false; error: string };
@@ -138,7 +138,9 @@ export async function addPhotosAction(n: number, id: string, photos: { id: strin
       if (!isAllowedUploadPath(path)) throw new Error(`«${p.name}» — не фото`);
       return { id: p.id, path, name: p.name, origin: "upload" as const };
     });
-    await saveArticle({ ...article, photos: [...article.photos, ...added], updatedBy: editor.name, updatedAt: new Date().toISOString() });
+    // The first photo of an article without a cover becomes its card picture; it can be changed in the editor.
+    const fields = article.fields && !article.fields.coverPhotoId && added[0] ? { ...article.fields, coverPhotoId: added[0].id } : article.fields;
+    await saveArticle({ ...article, fields, photos: [...article.photos, ...added], updatedBy: editor.name, updatedAt: new Date().toISOString() });
     revalidatePath(issuePath(n));
   });
 }
@@ -166,6 +168,59 @@ export async function deletePhotoAction(n: number, id: string, photoId: string) 
       updatedAt: new Date().toISOString(),
     });
     revalidatePath(issuePath(n));
+  });
+}
+
+/** Sets (or replaces) the portrait shown in the author card of this article. */
+export async function setAuthorPhotoAction(n: number, id: string, photo: { id: string; name: string }) {
+  return attempt(async () => {
+    const editor = await requireEditor();
+    const article = await loadArticle(n, id);
+    const name = text(photo?.name, 255, "Назва фото");
+    const path = authorPhotoPath(article.issue, article.id, assertId(photo.id), fileExtension(name));
+    if (!isAllowedUploadPath(path)) throw new Error(`«${name}» — не фото`);
+    if (article.authorPhoto) await removeFiles([article.authorPhoto.path]);
+    await saveArticle({
+      ...article,
+      authorPhoto: { id: photo.id, path, name, origin: "author" },
+      updatedBy: editor.name,
+      updatedAt: new Date().toISOString(),
+    });
+    revalidatePath(issuePath(article.issue));
+    return "Фото автора додано";
+  });
+}
+
+export async function removeAuthorPhotoAction(n: number, id: string) {
+  return attempt(async () => {
+    const editor = await requireEditor();
+    const article = await loadArticle(n, id);
+    if (!article.authorPhoto) return;
+    await removeFiles([article.authorPhoto.path]);
+    await saveArticle({ ...article, authorPhoto: undefined, updatedBy: editor.name, updatedAt: new Date().toISOString() });
+    revalidatePath(issuePath(article.issue));
+  });
+}
+
+/** Saves the order chosen on the layout grid: the first card becomes N01 on the site, the next N02, and so on. */
+export async function reorderArticlesAction(n: number, ids: string[]) {
+  return attempt(async () => {
+    await requireEditor();
+    n = issueNumber(n);
+    if (!Array.isArray(ids) || ids.length > 100) throw new Error("Невірний порядок");
+    ids.forEach((id) => assertId(text(id, 32, "id")));
+    const list = await listArticles(n);
+    if (ids.length !== list.length || !list.every((a) => ids.includes(a.id))) {
+      throw new Error("Список статей змінився — оновіть сторінку й спробуйте ще раз");
+    }
+    await Promise.all(
+      ids.map((articleId, k) => {
+        const article = list.find((a) => a.id === articleId)!;
+        return article.order === k + 1 ? null : saveArticle({ ...article, order: k + 1 });
+      })
+    );
+    revalidatePath(issuePath(n));
+    return "Порядок збережено";
   });
 }
 

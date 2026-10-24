@@ -8,6 +8,8 @@ import { toast } from "sonner";
 import { saveArticleAction } from "@/app/redakciya/actions";
 import type { ArticleFields, DraftPhoto } from "@/lib/redakciya/store";
 import { Field, inputClass, PrimaryButton } from "./ui";
+import { AuthorPhotoField } from "./author-photo-field";
+import type { UploadFlow } from "./upload";
 
 const LABELS = ["Автор статті", "Авторка статті", "Автори статті", "Авторка репортажу", "Автор рубрики", "Авторка рубрики"];
 
@@ -18,6 +20,8 @@ export function ArticleEditor({
   photos,
   categories,
   authors,
+  authorPhoto,
+  storage,
 }: {
   issue: number;
   id: string;
@@ -25,6 +29,8 @@ export function ArticleEditor({
   photos: DraftPhoto[];
   categories: string[];
   authors: string[];
+  authorPhoto?: DraftPhoto;
+  storage: UploadFlow;
 }) {
   const router = useRouter();
   const [fields, setFields] = useState(initial);
@@ -105,6 +111,13 @@ export function ArticleEditor({
         <Field label="Про автора" hint="Клас або місце навчання — показується в картці автора">
           <input value={fields.authorDescription} onChange={(e) => set("authorDescription", e.target.value)} className={inputClass} />
         </Field>
+        <div>
+          <span className="mb-1.5 block text-sm font-semibold text-foreground">Фото автора</span>
+          <AuthorPhotoField issue={issue} articleId={id} photo={authorPhoto} storage={storage} />
+          <span className="mt-1 block text-xs text-muted-foreground">
+            Якщо автор уже писав для газети, без нового фото лишиться його попереднє.
+          </span>
+        </div>
         <datalist id="known-authors">
           {authors.map((a) => (
             <option key={a} value={a} />

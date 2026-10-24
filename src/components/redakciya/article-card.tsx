@@ -20,6 +20,7 @@ import type { DraftArticle } from "@/lib/redakciya/store";
 import { fileExtension, photoPath, PHOTO_EXTENSIONS, randomId } from "@/lib/redakciya/upload-paths";
 import { Badge, formatDate, SecondaryButton, PrimaryButton } from "./ui";
 import { Dropzone } from "./dropzone";
+import { AuthorPhotoField } from "./author-photo-field";
 import { uploadToDrafts, type UploadFlow } from "./upload";
 
 export function ArticleCard({
@@ -145,15 +146,16 @@ export function ArticleCard({
             </ul>
           ) : null}
 
-          <div className="mt-3 max-w-md">
+          <div className="mt-3 grid max-w-3xl gap-3 md:grid-cols-2">
             <Dropzone
               compact
               accept="image/jpeg,image/png,image/webp,image/gif"
               onFiles={addPhotos}
-              title={busy === "photos" ? "Завантаження фото…" : "Додати фото"}
+              title={busy === "photos" ? "Завантаження фото…" : "Додати фото до статті"}
               hint="перетягніть або натисніть"
               disabled={busy === "photos"}
             />
+            <AuthorPhotoField issue={article.issue} articleId={article.id} photo={article.authorPhoto} storage={storage} />
           </div>
 
           {!fields ? (

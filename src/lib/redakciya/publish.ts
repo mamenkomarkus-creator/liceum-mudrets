@@ -36,12 +36,14 @@ export async function publishIssue(number: number, editor: Editor): Promise<Draf
     buildSiteArticle(draft, issue, index, (photo) => `/images/issue${number}/${photo.id}.webp`).article
   );
   for (const draft of drafts) {
-    for (const photo of draft.photos) {
+    for (const photo of [...draft.photos, ...(draft.authorPhoto ? [draft.authorPhoto] : [])]) {
       const src = `/images/issue${number}/${photo.id}.webp`;
-      if (!built.some((a) => a.image === src || a.images?.includes(src))) continue;
+      if (!built.some((a) => a.image === src || a.images?.includes(src) || a.authorProfile?.photo === src)) continue;
       const file = await readFile(photo.path);
       if (!file) throw new Error(`Фото «${photo.name}» зникло зі сховища`);
-      const webp = await sharp(file.data).rotate().resize({ width: 1600, withoutEnlargement: true }).webp({ quality: 82 }).toBuffer();
+      // The author card shows the portrait at most ~300px wide.
+      const width = photo.origin === "author" ? 600 : 1600;
+      const webp = await sharp(file.data).rotate().resize({ width, withoutEnlargement: true }).webp({ quality: 82 }).toBuffer();
       images.set(photo.id, { path: `public${src}`, data: webp, src });
     }
   }

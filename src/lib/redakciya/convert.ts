@@ -27,16 +27,31 @@ export async function docxToMarkup(buffer: Buffer): Promise<{ markup: string; im
   return { markup: htmlToMarkup(html), images };
 }
 
+/**
+ * PDF text comes as visual lines without paragraph marks. A paragraph ends where a line is clearly shorter than a
+ * full line of the page (last line of a paragraph, heading, signature); words broken by a hyphen are rejoined.
+ * The words themselves are kept as they are.
+ */
 export async function pdfToText(buffer: Buffer): Promise<string> {
   const pdf = await getDocumentProxy(new Uint8Array(buffer));
   const { text } = await extractText(pdf, { mergePages: false });
-  return text
-    .join("\n\n")
-    .replace(/-\n(?=\p{Ll})/gu, "")
-    .split(/\n\s*\n/)
-    .map((p) => p.replace(/\s*\n\s*/g, " ").trim())
-    .filter(Boolean)
-    .join("\n\n");
+  const paragraphs: string[] = [];
+  for (const page of text) {
+    const lines = page.split("\n").map((l) => l.trim()).filter(Boolean);
+    const lengths = lines.map((l) => l.length).sort((a, b) => a - b);
+    const fullLine = lengths[Math.floor(lengths.length * 0.8)] ?? 0;
+    let current = "";
+    for (const line of lines) {
+      if (/^[–-]?\s*\d+\s*[–-]?$/.test(line)) continue; // page numbers
+      current = current.endsWith("-") && /^\p{Ll}/u.test(line) ? current.slice(0, -1) + line : current ? `${current} ${line}` : line;
+      if (line.length < fullLine * 0.8) {
+        paragraphs.push(current);
+        current = "";
+      }
+    }
+    if (current) paragraphs.push(current);
+  }
+  return paragraphs.join("\n\n");
 }
 
 const ENTITIES: Record<string, string> = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " " };

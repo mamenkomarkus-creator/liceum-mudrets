@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { CATEGORIES, getAuthors } from "@/lib/data";
 import { requireEditorPage } from "@/lib/redakciya/auth";
 import { getArticle, getIssue } from "@/lib/redakciya/store";
+import { uploadFlow } from "@/lib/redakciya/storage";
 import { ArticleEditor } from "@/components/redakciya/article-editor";
 
 export const maxDuration = 60;
@@ -33,6 +34,8 @@ export default async function EditArticlePage({ params }: { params: Promise<{ n:
         photos={article.photos}
         categories={CATEGORIES}
         authors={getAuthors()}
+        authorPhoto={article.authorPhoto}
+        storage={uploadFlow()}
       />
     </div>
   );

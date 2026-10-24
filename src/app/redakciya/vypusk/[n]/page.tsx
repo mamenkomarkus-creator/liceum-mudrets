@@ -10,6 +10,8 @@ import { IssueSettings } from "@/components/redakciya/issue-settings";
 import { ArticleUploader } from "@/components/redakciya/article-uploader";
 import { ArticleCard } from "@/components/redakciya/article-card";
 import { PublishPanel } from "@/components/redakciya/publish-panel";
+import { IssueLayout, type LayoutItem } from "@/components/redakciya/issue-layout";
+import { previewPhotoSrc } from "@/lib/redakciya/build-article";
 
 // Processing an article with Claude and publishing run as server actions of this page.
 export const maxDuration = 300;
@@ -25,6 +27,18 @@ export default async function IssuePage({ params }: { params: Promise<{ n: strin
   const issue = await getIssue(Number(n));
   if (!issue) notFound();
   const articles = await listArticles(issue.number);
+  const layoutItems: LayoutItem[] = articles.map((a) => {
+    const cover = a.photos.find((p) => p.id === a.fields?.coverPhotoId);
+    return {
+      id: a.id,
+      title: a.fields?.title || a.source.name,
+      category: a.fields?.category ?? "Не оброблено",
+      subcategory: a.fields?.subcategory ?? "",
+      description: a.fields?.description ?? "",
+      cover: cover ? previewPhotoSrc(cover) : null,
+      ready: a.status === "ready",
+    };
+  });
 
   return (
     <div>
@@ -61,7 +75,20 @@ export default async function IssuePage({ params }: { params: Promise<{ n: strin
         <ArticleUploader issue={issue.number} storage={uploadFlow()} />
       </section>
 
-      <section className="mt-8" aria-labelledby="articles-heading">
+      {articles.length > 1 ? (
+        <section className="mt-10" aria-labelledby="layout-heading">
+          <h2 id="layout-heading" className="font-display text-xl font-bold text-[#111]">
+            Як буде на сайті
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Перетягніть картку мишкою (або натисніть стрілки), щоб змінити порядок. Перша картка буде першою на головній.
+          </p>
+          {/* Remount when the server data changes (a saved order, a new title or cover). */}
+          <IssueLayout key={layoutItems.map((i) => `${i.id}:${i.title}:${i.category}:${i.cover}`).join()} issue={issue.number} items={layoutItems} />
+        </section>
+      ) : null}
+
+      <section className="mt-10" aria-labelledby="articles-heading">
         <h2 id="articles-heading" className="font-display text-xl font-bold text-[#111]">
           Статті випуску
         </h2>

@@ -50,11 +50,17 @@ export function buildSiteArticle(
   const author = fields.author.trim();
   const known = author ? existingProfile(author) : undefined;
   const description = fields.authorDescription.trim();
-  const authorProfile: AuthorProfile | undefined = known
+  let authorProfile: AuthorProfile | undefined = known
     ? { ...known, description: description || known.description }
     : author
       ? { name: author, ...(description ? { description } : {}) }
       : undefined;
+  if (authorProfile && draft.authorPhoto) {
+    // A newly uploaded portrait replaces the earlier one, together with its framing.
+    const portrait = { photo: draft.authorPhoto, src: photoSrc(draft.authorPhoto, 0) };
+    files.push(portrait);
+    authorProfile = { ...authorProfile, photo: portrait.src, photoPosition: undefined };
+  }
 
   const imageSrcs = inArticle.map((photo) => files.find((f) => f.photo.id === photo.id)!.src);
   const article: Article = {

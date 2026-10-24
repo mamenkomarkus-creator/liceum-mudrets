@@ -1,13 +1,13 @@
 import Anthropic from "@anthropic-ai/sdk";
 import sharp from "sharp";
 import { CATEGORIES, articles } from "@/lib/data";
-import type { ArticleFields } from "./store";
+import { STYLE_KINDS, type Layout } from "./layout";
 
 export const claudeEnabled = () => !!process.env.ANTHROPIC_API_KEY;
 
 const MODEL = "claude-opus-5-5";
 
-/** Photo as Claude sees it: id for [фото:id] markers, plus the picture itself so it can write captions. */
+/** Photo as Claude sees it: id for [фото:id] markers, plus the picture itself so it can pick the cover. */
 export interface PhotoForClaude {
   id: string;
   name: string;
@@ -15,17 +15,14 @@ export interface PhotoForClaude {
 }
 
 export interface ClaudeInput {
-  /** Markup converted from Word (with [фото:id] markers), or null when the source is a PDF. */
-  markup: string | null;
+  /** The author's text split into paragraphs (from Word or PDF). Claude only gets to classify them. */
+  paragraphs: string[];
+  /** The original PDF, as visual context for headings and captions; the text itself comes from `paragraphs`. */
   pdf: Buffer | null;
   fileName: string;
   photos: PhotoForClaude[];
   notes: string;
   uploadedBy: string;
-}
-
-export interface ClaudeResult extends ArticleFields {
-  photoCaptions: { id: string; caption: string }[];
 }
 
 const SCHEMA = {
@@ -39,9 +36,10 @@ const SCHEMA = {
     "author",
     "authorLabel",
     "authorDescription",
-    "content",
     "coverPhotoId",
-    "photoCaptions",
+    "remove",
+    "styles",
+    "captions",
   ],
   properties: {
     title: { type: "string" },
@@ -51,15 +49,24 @@ const SCHEMA = {
     author: { type: "string" },
     authorLabel: { type: "string" },
     authorDescription: { type: "string" },
-    content: { type: "string" },
     coverPhotoId: { type: "string" },
-    photoCaptions: {
+    remove: { type: "array", items: { type: "integer" } },
+    styles: {
       type: "array",
       items: {
         type: "object",
         additionalProperties: false,
-        required: ["id", "caption"],
-        properties: { id: { type: "string" }, caption: { type: "string" } },
+        required: ["p", "kind"],
+        properties: { p: { type: "integer" }, kind: { type: "string", enum: STYLE_KINDS } },
+      },
+    },
+    captions: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: ["p", "photoId"],
+        properties: { p: { type: "integer" }, photoId: { type: "string" } },
       },
     },
   },
@@ -78,15 +85,7 @@ function systemPrompt(): string {
     .slice(0, 3)
     .map((a) =>
       JSON.stringify(
-        {
-          title: a.title,
-          description: a.description,
-          category: a.category,
-          subcategory: a.subcategory ?? "",
-          author: a.author ?? "",
-          authorLabel: a.authorLabel ?? "",
-          content: a.content.slice(0, 1800) + (a.content.length > 1800 ? "\n…" : ""),
-        },
+        { title: a.title, description: a.description, category: a.category, subcategory: a.subcategory ?? "", author: a.author ?? "", authorLabel: a.authorLabel ?? "" },
         null,
         2
       )
@@ -95,40 +94,41 @@ function systemPrompt(): string {
   return `Ти — випусковий редактор електронної газети «Ліцейський мудрець» Білоцерківського академічного ліцею «Мала академія наук». Учні й випускники надсилають статті у Word або PDF, а ти готуєш кожну до публікації на сайті.
 
 ## Головне правило
-Текст автора не переписуй. Не скорочуй, не перефразовуй, не «покращуй» стиль, не додавай нових речень. Дозволено лише:
-- прибрати з тексту службові рядки, які дублюють поля статті: назву рубрики, заголовок, підпис «Автор: …», дату, номер випуску, біографічну довідку про автора (її перенеси в authorDescription);
-- виправити очевидні технічні огріхи: подвійні пробіли, розірвані переносами слова, зайві порожні рядки, прямі лапки "…" на «…», дефіс між словами на тире там, де потрібне тире;
-- розмітити структуру (див. нижче).
+Текст статті ти НЕ пишеш і НЕ змінюєш. Тобі дають текст, розбитий на пронумеровані абзаци [1], [2], … Ти лише:
+1. заповнюєш поля картки статті (назва, опис, рубрика, автор);
+2. позначаєш номери абзаців, які є службовими й дублюють поля статті, щоб їх прибрати з тексту (remove);
+3. вказуєш, яким елементом оформлення є абзац (styles);
+4. вказуєш абзаци, що є підписами під фото (captions).
+Сам текст абзаців буде взято з оригіналу дослівно — жодне слово, літера чи розділовий знак не зміниться.
 
-## Розмітка поля content
-Абзаци розділяються порожнім рядком. Доступно:
-- \`## Підзаголовок\`, \`### Менший підзаголовок\` — лише там, де в тексті справді є підзаголовки;
-- \`**жирний**\`, \`*курсив*\` — як у вихідному тексті;
-- списки \`- пункт\` і \`1. пункт\`;
-- \`> цитата\` — для виокремлених цитат (рядок \`— Ім'я\` всередині цитати стає підписом);
-- \`!> текст\` — виноска / примітка редакції;
-- \`^^ текст\` — велике привітання на початку колонки («Шановні читачі!»);
-- \`%% текст\` — підпис наприкінці («Ваші …»);
-- інтерв'ю: питання \`Q> текст питання\`, відповідь \`A> текст відповіді\` (кожне — окремим абзацом);
-- \`---\` — розділювач між частинами;
-- \`[фото:ID]\` — фото на окремому рядку. Маркери, що вже є в тексті, лиши на тих самих місцях. Окремо завантажені фото, яких у тексті немає, можна вставити туди, де вони доречні за змістом, або не вставляти — тоді вони підуть галереєю в кінці статті.
-Інших тегів і HTML не використовуй.
+## remove — лише службові абзаци
+Прибрати можна тільки абзаци на початку або в кінці тексту, які дублюють поля: назву рубрики («ОБРІЇ»), заголовок статті, рядок з іменем автора («Олена Коваль, 10-Б», «Автор: …»), дату, номер випуску, коротку довідку про автора (її зміст переходить у authorDescription). Абзаци з основним текстом не прибирай ніколи. Якщо сумніваєшся — не прибирай.
+
+## styles — оформлення абзаців
+Вказуй лише ті абзаци, які не є звичайним текстом:
+- heading — підзаголовок розділу; subheading — менший підзаголовок;
+- quote — виокремлена цитата; note — примітка чи виноска редакції;
+- greeting — звернення на початку колонки («Шановні читачі!»); signature — підпис наприкінці («Ваші …»);
+- question / answer — питання й відповідь в інтерв'ю;
+- paragraph — абзац, який у тексті виглядає як підзаголовок (починається з ## чи ###), але насправді є звичайним текстом.
+
+## captions — підписи до фото
+Якщо абзац одразу перед або після маркера [фото:ID] є підписом до цього фото (опис того, що на знімку), вкажи його номер і id фото: він стане підписом під фото дослівно.
 
 ## Поля
-- title: заголовок статті, як його дав автор (без лапок навколо, без назви рубрики).
-- description: 1–2 речення для картки на головній — хто й про що пише, у третій особі (див. приклади). До 200 символів.
+- title: заголовок статті точно так, як його написав автор (без лапок навколо, без назви рубрики).
+- description: 1–2 речення для картки на головній — хто й про що пише, у третій особі (див. приклади). До 200 символів. Це єдиний текст, який пишеш ти.
 - category: одна з рубрик: ${CATEGORIES.join(", ")}. «КОЛОНКА РЕДАКТОРА» — звернення редакції; «ЛІЦЕЙ» — події й життя ліцею; «ОБРІЇ» — історія, культура, профорієнтація, роздуми про світ; «ДІАЛОГИ ПРО НЕСКОРЕНИХ» — розмови про війну й людей, що її пережили; «ВИПУСКНИКИ» — про випускників і від них; «ВСТУПНИКАМ» — поради вступникам, НМТ; «РАДИМО ПРОЧИТАТИ» — книжкові поради.
 - subcategory: підрубрика, якщо вона очевидна з тексту («Події», «Новий набір», «До Дня …»), інакше "".
-- author: ім'я та прізвище автора (кількох — через кому) у формі «Ім'я Прізвище». Шукай у підписі чи заголовку файла. Якщо автор уже писав для газети, пиши ім'я точно як у списку нижче. Якщо автора не видно, лиши "".
+- author: ім'я та прізвище автора (кількох — через кому) у формі «Ім'я Прізвище». Якщо автор уже писав для газети, пиши ім'я точно як у списку нижче. Якщо автора не видно, лиши "".
 - authorLabel: «Автор статті», «Авторка статті», «Автори статті» або інше доречне («Авторка репортажу», «Авторка рубрики»). Якщо автора немає — "".
 - authorDescription: коротка довідка про автора (клас, навчання, посада), якщо вона є в тексті або автор є у списку нижче; інакше "".
 - coverPhotoId: id фото, найкращого для картки статті на головній (зазвичай перше змістовне фото), або "", якщо фото немає.
-- photoCaptions: підписи до фото — лише якщо підпис є у тексті поруч із фото або очевидний з контексту (не вигадуй імен людей на фото). Якщо підпису немає, не додавай цей елемент.
 
 ## Автори, які вже писали для газети
 ${[...authors].map(([name, d]) => `- ${name} — ${d}`).join("\n")}
 
-## Приклади опублікованих статей (content обрізано)
+## Приклади полів опублікованих статей
 ${examples.join("\n\n")}`;
 }
 
@@ -140,7 +140,8 @@ async function photoBlock(photo: PhotoForClaude): Promise<Anthropic.Beta.BetaIma
   return { type: "image", source: { type: "base64", media_type: "image/jpeg", data: jpeg.toString("base64") } };
 }
 
-export async function formatWithClaude(input: ClaudeInput): Promise<ClaudeResult> {
+/** Asks Claude for the article's card fields and the layout of its paragraphs. The text itself never comes from Claude. */
+export async function layoutWithClaude(input: ClaudeInput): Promise<Layout> {
   cachedSystem ??= systemPrompt();
   const client = new Anthropic();
 
@@ -158,8 +159,9 @@ export async function formatWithClaude(input: ClaudeInput): Promise<ClaudeResult
       `Файл: «${input.fileName}». Завантажив(ла): ${input.uploadedBy}.`,
       input.notes ? `Примітка від редакції: ${input.notes}` : "",
       input.photos.length ? `Фото до статті: ${input.photos.map((p) => p.id).join(", ")}.` : "Фото до статті немає.",
-      input.markup !== null ? `Текст статті (перетворений з Word):\n\n${input.markup}` : "Текст статті — у PDF вище.",
-      "Підготуй статтю до публікації.",
+      input.pdf ? "PDF вище — лише для того, щоб бачити, як виглядає стаття. Номери абзаців — у тексті нижче." : "",
+      `Текст статті по абзацах:\n\n${input.paragraphs.map((p, i) => `[${i + 1}] ${p}`).join("\n\n")}`,
+      "Заповни поля й розмітку для цієї статті.",
     ]
       .filter(Boolean)
       .join("\n\n"),
@@ -168,7 +170,7 @@ export async function formatWithClaude(input: ClaudeInput): Promise<ClaudeResult
   const message = await client.beta.messages
     .stream({
       model: MODEL,
-      max_tokens: 64000,
+      max_tokens: 32000,
       betas: ["server-side-fallback-2026-07-01"],
       fallbacks: "default",
       output_config: { effort: "medium", format: { type: "json_schema", schema: SCHEMA } },
@@ -178,10 +180,10 @@ export async function formatWithClaude(input: ClaudeInput): Promise<ClaudeResult
     .finalMessage();
 
   if (message.stop_reason === "refusal") throw new Error("Claude відмовився обробляти цей текст. Заповніть поля вручну.");
-  if (message.stop_reason === "max_tokens") throw new Error("Стаття задовга для однієї обробки. Заповніть поля вручну.");
+  if (message.stop_reason === "max_tokens") throw new Error("Claude не встиг відповісти повністю. Спробуйте ще раз.");
   const text = message.content.flatMap((b) => (b.type === "text" ? [b.text] : [])).join("");
-  const result = JSON.parse(text) as ClaudeResult;
-  if (typeof result.content !== "string" || typeof result.title !== "string") throw new Error("Claude повернув неповну відповідь");
+  const result = JSON.parse(text) as Layout;
+  if (typeof result.title !== "string" || !Array.isArray(result.styles)) throw new Error("Claude повернув неповну відповідь");
   return result;
 }
 

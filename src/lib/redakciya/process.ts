@@ -1,6 +1,7 @@
 import { CATEGORIES, articles } from "@/lib/data";
 import { docxToMarkup, pdfToText } from "./convert";
-import { claudeEnabled, describeClaudeError, formatWithClaude } from "./claude";
+import { claudeEnabled, describeClaudeError, layoutWithClaude } from "./claude";
+import { applyLayout, splitParagraphs, type Layout } from "./layout";
 import { readFile, removeFiles, writeFile } from "./storage";
 import { articleDir, getArticle, newId, saveArticle, type ArticleFields, type DraftArticle, type DraftPhoto } from "./store";
 
@@ -50,23 +51,36 @@ export async function processArticle(issue: number, id: string, editorName: stri
       const photoData = await Promise.all(
         photos.map(async (p) => ({ id: p.id, name: p.name, data: (await readFile(p.path))?.data }))
       );
+      // Claude never returns text: it only says which paragraphs are headings, quotes, captions or service
+      // lines, and applyLayout() rebuilds the article from the author's own words (and checks that).
+      const paragraphs = splitParagraphs(markup ?? (await pdfToText(source.data)));
+      let layout: Layout;
       try {
-        const result = await formatWithClaude({
-          markup,
+        layout = await layoutWithClaude({
+          paragraphs,
           pdf: article.source.kind === "pdf" ? source.data : null,
           fileName: article.source.name,
           photos: photoData.filter((p): p is { id: string; name: string; data: Buffer } => !!p.data),
           notes: article.notes,
           uploadedBy: article.uploadedBy,
         });
-        const { photoCaptions, ...rest } = result;
-        fields = rest;
-        const captions = new Map(photoCaptions.map((c) => [c.id, c.caption.trim()]));
-        photos = photos.map((p) => (captions.get(p.id) && !p.caption ? { ...p, caption: captions.get(p.id) } : p));
-        processedWith = "claude";
       } catch (error) {
         throw new Error(describeClaudeError(error));
       }
+      const applied = applyLayout(paragraphs, layout);
+      fields = {
+        title: layout.title,
+        description: layout.description,
+        category: layout.category,
+        subcategory: layout.subcategory,
+        author: layout.author,
+        authorLabel: layout.authorLabel,
+        authorDescription: layout.authorDescription,
+        content: applied.content,
+        coverPhotoId: layout.coverPhotoId,
+      };
+      photos = photos.map((p) => (applied.captions[p.id] && !p.caption ? { ...p, caption: applied.captions[p.id] } : p));
+      processedWith = "claude";
     } else {
       const text = markup ?? (await pdfToText(source.data));
       fields = basicFields(text, article);

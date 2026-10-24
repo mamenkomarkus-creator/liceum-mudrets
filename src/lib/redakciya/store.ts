@@ -19,8 +19,8 @@ export interface DraftPhoto {
   id: string;
   path: string;
   name: string;
-  /** "docx": pulled out of the Word file during processing (replaced when it is processed again). */
-  origin: "upload" | "docx";
+  /** "docx": pulled out of the Word file during processing (replaced when it is processed again). "author": portrait for the author card. */
+  origin: "upload" | "docx" | "author";
   caption?: string;
 }
 
@@ -46,6 +46,8 @@ export interface DraftArticle {
   order: number;
   source: { path: string; name: string; kind: "docx" | "pdf"; size: number };
   photos: DraftPhoto[];
+  /** Portrait for the author card; overrides the photo of an author who wrote for the paper before. */
+  authorPhoto?: DraftPhoto;
   notes: string;
   uploadedBy: string;
   uploadedAt: string;

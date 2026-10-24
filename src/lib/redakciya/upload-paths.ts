@@ -13,8 +13,12 @@ export function photoPath(issue: number, articleId: string, photoId: string, ext
   return `drafts/issues/${issue}/articles/${articleId}/photos/${photoId}.${ext}`;
 }
 
+export function authorPhotoPath(issue: number, articleId: string, photoId: string, ext: string) {
+  return `drafts/issues/${issue}/articles/${articleId}/author/${photoId}.${ext}`;
+}
+
 const SOURCE_RE = /^drafts\/issues\/\d{1,4}\/articles\/[A-Za-z0-9]{4,32}\/source\.(docx|pdf)$/;
-const PHOTO_RE = /^drafts\/issues\/\d{1,4}\/articles\/[A-Za-z0-9]{4,32}\/photos\/[A-Za-z0-9]{4,32}\.(jpg|jpeg|png|webp|gif)$/;
+const PHOTO_RE = /^drafts\/issues\/\d{1,4}\/articles\/[A-Za-z0-9]{4,32}\/(photos|author)\/[A-Za-z0-9]{4,32}\.(jpg|jpeg|png|webp|gif)$/;
 
 export function isAllowedUploadPath(pathname: string): boolean {
   return SOURCE_RE.test(pathname) || PHOTO_RE.test(pathname);

@@ -1,15 +1,17 @@
 import React from "react";
+import Image from "next/image";
 import Link from "next/link";
-import { ExternalLink, FileText, Send, Video } from "lucide-react";
+import { AudioLines, ExternalLink, FileText, Send, Video } from "lucide-react";
 import { AuthorAvatar } from "@/components/author-avatar";
 import { ImageGallery } from "@/components/image-gallery";
 import { renderInline } from "@/lib/inline";
+import { YoutubeEmbed } from "@/components/youtube-embed";
 
 export interface ContentImage {
   src: string;
   alt?: string;
   caption?: string;
-  fit?: "cover" | "contain" | "natural" | "small" | "plain" | "portrait";
+  fit?: "cover" | "contain" | "natural" | "small" | "plain" | "portrait" | "print" | "float-left" | "float-right";
 }
 
 /** "3" -> [3], "0-5" -> [0..5] */
@@ -231,6 +233,34 @@ export function parseContentBlocks(
       continue;
     }
 
+    // "[youtube:ID:title:caption]": a YouTube video in the flow of the text (loads only on click).
+    const yt = trimmed.match(/^\[youtube:([\w-]{6,}):([^\]:]*)(?::([^\]]*))?\]$/);
+    if (yt) {
+      blocks.push(
+        <YoutubeEmbed key={`yt-${blockIndex++}`} url={`https://youtu.be/${yt[1]}`} title={yt[2] || undefined} caption={yt[3] || undefined} />
+      );
+      i++;
+      continue;
+    }
+
+    // "[audio:/audio/file.mp3:caption]": a recording; shown only once the file is in /public.
+    const audio = trimmed.match(/^\[audio:(\/[^\]:]+)(?::(.*))?\]$/);
+    if (audio) {
+      if (options.hasFile?.(audio[1])) {
+        blocks.push(
+          <figure key={`audio-${blockIndex++}`} className="audio-clip">
+            <figcaption>
+              <AudioLines size={18} aria-hidden />
+              {audio[2] ? renderInline(audio[2], `audio-${blockIndex}`) : "Аудіозапис"}
+            </figcaption>
+            <audio controls preload="none" src={audio[1]} className="w-full" />
+          </figure>
+        );
+      }
+      i++;
+      continue;
+    }
+
     const embed = trimmed.match(/^\[embed:([\w-]+)\]$/);
     if (embed) {
       const node = options.embeds?.[embed[1]];
@@ -274,6 +304,21 @@ export function parseContentBlocks(
 
     if (/^!>\s/.test(trimmed)) {
       const text = trimmed.replace(/^!>\s+/, "");
+      // "!> [images:N] text": the person's photo and the introduction about them as one block.
+      const withPhoto = text.match(/^\[images:(\d+)\]\s+([\s\S]+)$/);
+      const photo = withPhoto ? images?.[Number(withPhoto[1])] : undefined;
+      if (withPhoto && photo) {
+        blocks.push(
+          <aside key={`callout-${blockIndex++}`} className="callout callout-photo">
+            <span className="callout-photo-img">
+              <Image src={photo.src} alt={photo.alt ?? photo.caption ?? ""} fill quality={90} sizes="(max-width: 640px) 240px, 220px" className="object-cover" />
+            </span>
+            <p>{renderInline(withPhoto[2], `callout-${blockIndex}`)}</p>
+          </aside>
+        );
+        i++;
+        continue;
+      }
       blocks.push(
         <aside key={`callout-${blockIndex++}`} className="callout">
           <p>{renderInline(text, `callout-${blockIndex}`)}</p>
@@ -288,6 +333,26 @@ export function parseContentBlocks(
       while (i < lines.length && /^>(?!>)(\s|$)/.test(lines[i].trim())) {
         inner.push(lines[i].trim().replace(/^>\s?/, ""));
         i++;
+      }
+      // "> [images:N]" as the first line: the photo sits beside the quote, in one card.
+      const pic = inner[0]?.match(/^\[images:(\d+)\]$/);
+      const picImage = pic ? images?.[Number(pic[1])] : undefined;
+      if (picImage) {
+        const body = inner.slice(1).join("\n").replace(/^\s+/, "");
+        blocks.push(
+          <blockquote key={`bq-${blockIndex++}`} className="quote-photo">
+            <figure className="quote-photo-figure">
+              <span className="quote-photo-frame">
+                <Image src={picImage.src} alt={picImage.alt ?? picImage.caption ?? ""} fill quality={90} sizes="180px" className="object-cover" />
+              </span>
+              {picImage.caption ? <figcaption>{picImage.caption}</figcaption> : null}
+            </figure>
+            <div className="quote-photo-body">
+              {parseContentBlocks(body, undefined, renderImage, { ...options, inQuote: true })}
+            </div>
+          </blockquote>
+        );
+        continue;
       }
       const who = inner[0]?.match(/^@([\w-]+)$/);
       const speaker = who ? options.speakers?.[who[1]] : undefined;
@@ -382,7 +447,7 @@ export function parseContentBlocks(
     while (
       i < lines.length &&
       lines[i].trim() !== "" &&
-      !/^(§§B\d+§§|\[(images|carousel|tour-gallery|profile-cards|sample-tasks|presentation|embed)(:[^\]]*)?\])$/.test(lines[i].trim()) &&
+      !/^(§§B\d+§§|\[(images|carousel|tour-gallery|profile-cards|sample-tasks|presentation|embed|audio|youtube)(:[^\]]*)?\])$/.test(lines[i].trim()) &&
       lines[i].trim() !== "---" &&
       !/^!>\s/.test(lines[i].trim()) &&
       !/^[QA]>\s/.test(lines[i].trim()) &&

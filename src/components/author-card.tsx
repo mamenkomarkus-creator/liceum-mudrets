@@ -14,6 +14,7 @@ function Photo({ profile, className }: { profile: AuthorProfile; className: stri
           // Editorial previews show portraits from the private drafts storage, which the optimizer cannot fetch.
           unoptimized={profile.photo.startsWith("/api/")}
           fill
+          quality={90}
           sizes="148px"
           style={{ objectPosition: profile.photoPosition ?? "center 20%" }}
           className="object-cover"

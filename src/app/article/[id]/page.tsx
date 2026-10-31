@@ -20,6 +20,13 @@ import { BookBack } from "@/components/book-back";
 import { DeckViewer } from "@/components/deck-viewer";
 import { ProgramLeaflet } from "@/components/program-leaflet";
 import { ArticleImage } from "@/components/article-image";
+import { TeamCarousel } from "@/components/team-carousel";
+import { UpaBackdrop } from "@/components/upa-backdrop";
+import { NmtChoiceChart } from "@/components/nmt-choice-chart";
+import { MurHero, MurQuote } from "@/components/mur-hero";
+import { MurMap } from "@/components/mur-extras";
+import { BookHeminhvei } from "@/components/book-heminhvei";
+import { Ruslan_Display } from "next/font/google";
 import { ImageGallery } from "@/components/image-gallery";
 import { AuthorCard } from "@/components/author-card";
 import { AuthorAvatar } from "@/components/author-avatar";
@@ -33,6 +40,9 @@ import { QuizList } from "@/components/quiz-block";
 import { TridentWatermark } from "@/components/trident-watermark";
 import { BackButton } from "@/components/back-button";
 import Image from "next/image";
+
+// Display face of the MUR theatre poster style (articles with theme "mur"); downloaded only where used.
+const murFont = Ruslan_Display({ weight: "400", subsets: ["cyrillic", "latin"], variable: "--font-mur", preload: false });
 
 const hasFile = (publicPath: string) => fs.existsSync(path.join(process.cwd(), "public", publicPath));
 
@@ -95,12 +105,15 @@ export default async function ArticlePage({ params }: { params: Promise<{ id: st
   };
 
   return (
-    <div className="mx-auto max-w-[1100px] px-4 py-8 md:py-12">
+    <div className={`mx-auto max-w-[1100px] px-4 py-8 md:py-12${article.theme === "mur" ? ` ${murFont.variable}` : ""}`}>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
       />
-      <article className="mx-auto max-w-[760px]">
+      {article.ambient === "upa" ? <UpaBackdrop /> : null}
+      <article
+        className={`mx-auto max-w-[760px]${article.ambient === "upa" ? " upa-paper" : ""}${article.theme === "mur" ? " mur-sheet" : ""}`}
+      >
         <BackButton />
 
         <header className="mt-6">
@@ -179,6 +192,12 @@ export default async function ArticlePage({ params }: { params: Promise<{ id: st
             />
           ), { hasFile, speakers: article.speakers, embeds: { "book-dedication": <BookReveal />, "book-illustrations": <BookIllustrations />, "book-back": <BookBack />,
           "man-program": <ProgramLeaflet />,
+          "team-11a": <TeamCarousel />,
+          "nmt-choice": <NmtChoiceChart />,
+          "mur-hero": <MurHero />,
+          "mur-quote": <MurQuote />,
+          "mur-map": <MurMap />,
+          "heminhvei-book": <BookHeminhvei />,
           "deck-ns2026": (
             <DeckViewer
               base="/decks/ns2026/"
@@ -262,7 +281,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ id: st
         </footer>
       </article>
 
-      <div className="mx-auto mt-16 max-w-[760px] border-t border-border pt-10">
+      <div className={`mx-auto mt-16 max-w-[760px] border-t border-border pt-10${article.ambient === "upa" ? " upa-paper" : ""}`}>
         <CommentsSection articleId={article.id} />
       </div>
     </div>

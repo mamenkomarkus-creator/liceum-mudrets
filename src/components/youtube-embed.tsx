@@ -9,7 +9,7 @@ function extractYoutubeId(url: string): string | null {
 }
 
 /** The player is only requested after a click, so YouTube gets no data from visitors who just read the page. */
-export function YoutubeEmbed({ url, title }: { url: string; title?: string }) {
+export function YoutubeEmbed({ url, title, caption }: { url: string; title?: string; caption?: string }) {
   const id = extractYoutubeId(url);
   const [loaded, setLoaded] = useState(false);
   if (!id) return null;
@@ -41,7 +41,7 @@ export function YoutubeEmbed({ url, title }: { url: string; title?: string }) {
           </div>
         )}
       </div>
-      {title ? <figcaption className="mt-2 text-sm text-muted-foreground">{title}</figcaption> : null}
+      {caption ?? title ? <figcaption className="mt-2 text-sm text-muted-foreground">{caption ?? title}</figcaption> : null}
     </figure>
   );
 }

@@ -20,7 +20,7 @@ export interface ImageWithCaption {
   /** Text alternative for screen readers; defaults to the caption. */
   alt?: string;
   /** "contain" shows the whole picture (book covers, scans) instead of a 16:10 crop. */
-  fit?: "cover" | "contain" | "natural" | "small" | "plain" | "portrait";
+  fit?: "cover" | "contain" | "natural" | "small" | "plain" | "portrait" | "print" | "float-left" | "float-right";
 }
 
 export interface LinkRef {
@@ -88,5 +88,9 @@ export interface Article {
   pdfLinks?: LinkRef[];
   quizzes?: Quiz[];
   showTridentAnimation?: boolean;
+  /** Decoration in the free side margins while the article is read (desktop only). */
+  ambient?: "upa";
+  /** Visual theme of the whole article page, e.g. "mur": dark poster style of the MUR theatre. */
+  theme?: "mur";
   content: string;
 }

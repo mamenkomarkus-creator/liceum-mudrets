@@ -45,7 +45,7 @@ export interface MergedImage {
   src: string;
   alt?: string;
   caption?: string;
-  fit?: "cover" | "contain" | "natural" | "small" | "plain" | "portrait";
+  fit?: "cover" | "contain" | "natural" | "small" | "plain" | "portrait" | "print" | "float-left" | "float-right";
 }
 
 /** Combines `images` + `imagesWithCaptions` (parallel arrays keyed by index) into one list. */

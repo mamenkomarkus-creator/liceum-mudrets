@@ -54,12 +54,15 @@ export default function ArchivePage() {
                   <CalendarDays size={18} />
                   №{issue.number}
                 </span>
-                <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-semibold">Опубліковано</span>
+                <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-semibold">
+                  {issueArticles.length ? "Опубліковано" : "Готується"}
+                </span>
               </div>
               <div className="px-5 py-4">
                 <p className="font-display text-lg font-bold text-foreground">{getIssueMeta(issue.number).dateLabel}</p>
                 <p className="text-sm text-muted-foreground">
-                  {ordinal} випуск — {issueArticles.length} {pluralizeStatti(issueArticles.length)}
+                  {ordinal} випуск —{" "}
+                  {issueArticles.length ? `${issueArticles.length} ${pluralizeStatti(issueArticles.length)}` : "матеріали готуються"}
                 </p>
               </div>
               <div className="flex-1 flex flex-col">
@@ -83,7 +86,9 @@ export default function ArchivePage() {
                 href={`/?issue=${issue.number}#read`}
                 className="px-5 py-3 border-t border-border text-sm font-semibold text-primary hover:bg-muted transition-colors duration-150"
               >
-                Переглянути всі {issueArticles.length} {pluralizeStatti(issueArticles.length)} →
+                {issueArticles.length
+                  ? `Переглянути всі ${issueArticles.length} ${pluralizeStatti(issueArticles.length)} →`
+                  : "Перейти до випуску →"}
               </Link>
             </div>
           );

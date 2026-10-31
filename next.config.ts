@@ -33,6 +33,8 @@ const ASSET_CACHE = { key: "Cache-Control", value: "public, max-age=86400, stale
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // 90 is used for portraits (author cards, team carousel), where faces show compression the most.
+  images: { qualities: [75, 90] },
   async headers() {
     // Safari aggressively caches dev assets, which makes style changes look like they never applied.
     if (process.env.NODE_ENV === "development") {

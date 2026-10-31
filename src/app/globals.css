@@ -269,6 +269,62 @@ a:focus-visible .link-sweep {
   line-height: 1.7;
 }
 
+/* Quote with a photo of the person beside it ("> [images:N]" as the first line of a quote). */
+.prose-article blockquote.quote-photo {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  margin: 2.5rem 0;
+  padding: 1.25rem;
+  border: 1px solid #d8e2f7;
+  border-left: 4px solid var(--primary);
+  border-radius: 0.75rem;
+  background: #f6f8fd;
+  color: #222;
+  font-size: 1.0625rem;
+  line-height: 1.7;
+}
+
+.prose-article .quote-photo-figure {
+  margin: 0;
+  justify-self: center;
+  width: 150px;
+}
+
+.prose-article .quote-photo-frame {
+  position: relative;
+  display: block;
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  border-radius: 0.6rem;
+  background: #dfe6f5;
+}
+
+.prose-article .quote-photo-figure figcaption {
+  margin-top: 0.5rem;
+  text-align: center;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+  color: var(--muted-foreground);
+}
+
+.prose-article .quote-photo-body {
+  align-self: center;
+  min-width: 0;
+}
+
+.prose-article .quote-photo-body > :last-child {
+  margin-bottom: 0;
+}
+
+@media (min-width: 640px) {
+  .prose-article blockquote.quote-photo {
+    grid-template-columns: 150px minmax(0, 1fr);
+    gap: 1.5rem;
+    padding: 1.4rem 1.6rem 1.4rem 1.4rem;
+  }
+}
+
 .prose-article blockquote.quote-card::after {
   content: "»";
   position: absolute;
@@ -335,6 +391,35 @@ a:focus-visible .link-sweep {
 
 .prose-article .callout > p {
   margin: 0;
+}
+
+/* Callout with a portrait: the photo of the person beside the introduction about them. */
+.prose-article .callout-photo {
+  display: grid;
+  grid-template-columns: 1fr;
+  justify-items: center;
+  gap: 1.25rem;
+  padding: 1.25rem;
+}
+
+.prose-article .callout-photo-img {
+  position: relative;
+  display: block;
+  width: 100%;
+  max-width: 240px;
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  border-radius: 0.75rem;
+  background: #dfe6f5;
+}
+
+@media (min-width: 640px) {
+  .prose-article .callout-photo {
+    grid-template-columns: 200px minmax(0, 1fr);
+    align-items: center;
+    justify-items: stretch;
+    gap: 1.5rem;
+  }
 }
 
 ::selection {
@@ -1471,4 +1556,582 @@ a:focus-visible .link-sweep {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     align-items: start;
   }
+}
+
+/* Team carousel (issue 9): the bar of the current person fills up, then the next one starts. */
+@keyframes team-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.team-progress {
+  animation-name: team-progress;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+
+/* Article 904: near the end of the text the page behind it turns red and black (components/upa-backdrop.tsx). */
+.upa-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(180deg, #8f1c16 0%, #b3261e 40%, #2a1210 60%, #0e0d0d 100%);
+  opacity: var(--upa-p, 0);
+  transition: opacity 0.25s linear;
+}
+
+/* White sheet under the text and the comments; invisible on the white page, a card on the red-black one. */
+.upa-paper {
+  position: relative;
+  isolation: isolate;
+}
+
+.upa-paper::before {
+  content: "";
+  position: absolute;
+  inset: -24px -16px;
+  z-index: -1;
+  border-radius: 20px;
+  background: var(--background);
+  box-shadow: 0 30px 80px -24px rgb(0 0 0 / calc(0.55 * var(--upa-p, 0)));
+  transition: box-shadow 0.25s linear;
+}
+
+/* the comments get their own sheet with a strip of the backdrop between the two */
+.upa-paper + .upa-paper {
+  margin-top: 5.5rem;
+}
+
+@media (min-width: 900px) {
+  .upa-paper::before {
+    inset: -40px -48px;
+    border-radius: 28px;
+  }
+
+  .upa-paper + .upa-paper {
+    margin-top: 7rem;
+  }
+}
+
+/* Survey chart in article 905: bars grow in when the chart scrolls into view. */
+.nmt-bar {
+  transition: width 0.7s var(--ease-out);
+}
+
+.nmt-bar-label {
+  transition: left 0.7s var(--ease-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nmt-bar,
+  .nmt-bar-label {
+    transition: none;
+  }
+}
+
+/* Audio recording inside an article ("[audio:/audio/file.mp3:caption]"). */
+.prose-article .audio-clip {
+  margin: 1.5rem 0 2rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid #d8e2f7;
+  border-radius: 0.75rem;
+  background: #f6f8fd;
+}
+
+.prose-article .audio-clip figcaption {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #16233b;
+}
+
+.prose-article .audio-clip figcaption svg {
+  color: var(--primary);
+}
+
+/* Archival photos: a print with a white margin; small ones stand beside the text and the text wraps around. */
+.prose-article .img-print {
+  padding: 6px;
+  border-radius: 6px;
+  background: #fff;
+  box-shadow:
+    0 1px 2px rgb(22 35 59 / 0.12),
+    0 12px 28px -10px rgb(22 35 59 / 0.35);
+}
+
+.prose-article .img-float {
+  max-width: 420px;
+  margin: 2rem auto;
+}
+
+@media (min-width: 640px) {
+  .prose-article .img-float {
+    width: 42%;
+    max-width: 300px;
+    margin-block: 0.35rem 1.25rem;
+  }
+
+  .prose-article .img-float-left {
+    float: left;
+    clear: left;
+    margin-right: 1.75rem;
+    transform: rotate(-1deg);
+  }
+
+  .prose-article .img-float-right {
+    float: right;
+    clear: right;
+    margin-left: 1.75rem;
+    transform: rotate(1deg);
+  }
+
+  /* everything except running text starts below a floating photo */
+  .prose-article > :not(p):not(.img-float) {
+    clear: both;
+  }
+}
+
+/* Theme "mur" (article 908): the dark poster style of the MUR theatre — graphite sheet, golden ink, scattered waves. */
+.mur-sheet {
+  --background: #29282d;
+  --foreground: #ece6da;
+  --card: #333238;
+  --card-foreground: #ece6da;
+  --muted: #3b3940;
+  --muted-foreground: #aca69c;
+  --border: #48464d;
+  --primary: #f2a541;
+  --primary-foreground: #1f1e22;
+  --ring: #f2a541;
+  position: relative;
+  isolation: isolate;
+  color: var(--foreground);
+}
+
+.mur-sheet::before {
+  content: "";
+  position: absolute;
+  inset: -24px -16px;
+  z-index: -1;
+  border-radius: 20px;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='44'%3E%3Cg fill='none' stroke='%23f2a541' stroke-width='2' stroke-linecap='round' opacity='0.07'%3E%3Cpath d='M8 12q5-6 10 0t10 0t10 0t10 0'/%3E%3Cpath d='M66 34q5-6 10 0t10 0t10 0t10 0'/%3E%3C/g%3E%3C/svg%3E"),
+    #29282d;
+}
+
+@media (min-width: 900px) {
+  .mur-sheet::before {
+    inset: -40px -48px;
+    border-radius: 28px;
+  }
+}
+
+/* room between the dark sheet and the comments below it */
+.mur-sheet + div {
+  margin-top: 5.5rem;
+}
+
+.mur-sheet h1,
+.mur-sheet .prose-article h2 {
+  font-family: var(--font-mur), Georgia, serif;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  color: var(--primary);
+}
+
+.mur-sheet .prose-article {
+  color: #e6e0d4;
+}
+
+.mur-sheet .prose-article strong {
+  color: #fff;
+}
+
+.mur-sheet section[aria-label="Автор статті"] {
+  background: #333238;
+}
+
+.mur-sheet ::selection {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+/* the banknote boat rocking on clusters of golden waves */
+.mur-hero {
+  position: relative;
+  display: grid;
+  place-items: center;
+  margin: 0.5rem 0 2.5rem;
+  padding: 2.5rem 0 1rem;
+}
+
+
+.mur-hero-boat {
+  position: relative;
+  width: min(78vw, 440px);
+  height: auto;
+  filter: drop-shadow(0 16px 18px rgb(0 0 0 / 0.45));
+  animation: mur-bob 6s ease-in-out infinite;
+}
+
+.mur-hero figcaption {
+  position: relative;
+  margin-top: 6.6rem;
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+}
+
+@keyframes mur-bob {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-1.6deg);
+  }
+  50% {
+    transform: translateY(-9px) rotate(1.6deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mur-hero-boat {
+    animation: none;
+  }
+}
+
+/* Extras of the "mur" theme: the big saying, the life stepper and the flip cards. */
+.mur-display {
+  font-family: var(--font-mur), Georgia, serif;
+  font-weight: 400;
+}
+
+.mur-eyebrow {
+  margin: 0 0 1rem !important;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--primary);
+}
+
+.mur-quote {
+  position: relative;
+  margin: 3rem 0;
+  padding: 2.75rem 0.5rem;
+  text-align: center;
+}
+
+.mur-quote-waves {
+  position: absolute;
+  inset: 0 -1rem;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='26'%3E%3Cpath d='M6 15q5-7 10 0t10 0t10 0t10 0' fill='none' stroke='%23f2a541' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E");
+  mask-image: linear-gradient(90deg, #000 0, transparent 22%, transparent 78%, #000 100%);
+  opacity: 0.55;
+}
+
+.prose-article .mur-quote blockquote {
+  position: relative;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.prose-article .mur-quote p {
+  margin: 0 auto;
+  max-width: 34rem;
+  font-size: clamp(1.6rem, 4.6vw, 2.35rem);
+  line-height: 1.25;
+  color: var(--primary);
+}
+
+.mur-quote p::before,
+.mur-quote p::after {
+  color: #fff;
+  opacity: 0.85;
+}
+
+.mur-quote p::before {
+  content: "«";
+}
+
+.mur-quote p::after {
+  content: "»";
+}
+
+.mur-quote figcaption {
+  position: relative;
+  margin-top: 1rem;
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+}
+
+/* Route map in the style of the course site of «Грай, [Марку]» (components/mur-extras.tsx). */
+.mur-map-wrap {
+  position: relative;
+  margin: 2.5rem 0;
+}
+
+.mur-map-sticky {
+  position: sticky;
+  top: 6.5rem;
+  display: grid;
+  place-items: center;
+  height: calc(100vh - 7.5rem);
+}
+
+.mur-map {
+  position: relative;
+  width: 100%;
+  margin: 0;
+  padding: 18px;
+  border-radius: 6px;
+  background: #efe8da;
+  /* engraved frame like a banknote border */
+  box-shadow:
+    inset 0 0 0 6px #efe8da,
+    inset 0 0 0 7px #b9ab92,
+    inset 0 0 0 11px #efe8da,
+    inset 0 0 0 12px #b9ab92,
+    0 24px 48px -16px rgb(0 0 0 / 0.6);
+}
+
+.mur-map svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: calc(100vh - 12rem);
+}
+
+.mur-map-land-edge path {
+  fill: #d9cfbc;
+  stroke: #7d7466;
+  stroke-width: 3;
+  stroke-linejoin: round;
+}
+
+.mur-map-land path {
+  fill: #d9cfbc;
+}
+
+.mur-map-route {
+  fill: none;
+  stroke: #b7aa93;
+  stroke-width: 3;
+  stroke-dasharray: 9 7;
+  stroke-linecap: round;
+}
+
+.mur-map-route-done {
+  stroke: #e8892b;
+}
+
+.mur-map-place circle {
+  fill: #efe8da;
+  stroke: #2a2826;
+  stroke-width: 3;
+  transition:
+    fill 0.3s,
+    r 0.3s;
+}
+
+.mur-map-place[data-visited="true"] circle {
+  fill: #e8892b;
+}
+
+.mur-map-place[data-active="true"] circle {
+  r: 9;
+}
+
+.mur-map-place text {
+  font: 700 16px var(--font-sans), Arial, sans-serif;
+  fill: #2a2826;
+  paint-order: stroke;
+  stroke: #efe8da;
+  stroke-width: 4px;
+}
+
+.mur-map-arrow {
+  fill: none;
+  stroke: #2a2826;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.mur-map-place[data-visited="true"] .mur-map-arrow {
+  stroke: #e8892b;
+}
+
+.mur-map-boat {
+  filter: drop-shadow(0 3px 3px rgb(0 0 0 / 0.35));
+}
+
+.mur-map-card {
+  position: absolute;
+  top: 26px;
+  right: 26px;
+  width: min(19rem, 52%);
+  padding: 0.9rem 1rem;
+  border-radius: 14px;
+  background: #222125;
+  box-shadow: 0 14px 30px -12px rgb(0 0 0 / 0.6);
+}
+
+.mur-map-card-title {
+  display: block;
+  font-size: 1.15rem;
+  font-weight: 800;
+  line-height: 1.2;
+  color: #fff;
+}
+
+.mur-map-card-when {
+  color: #f7a23b;
+}
+
+.mur-map-card-text {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: #f7a23b;
+}
+
+.mur-map-hint {
+  position: absolute;
+  bottom: 22px;
+  left: 26px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8a7f6c;
+}
+
+/* phones: the caption goes under the map instead of over it */
+@media (max-width: 639px) {
+  .mur-map {
+    padding: 12px;
+  }
+
+  .mur-map-card {
+    position: static;
+    width: auto;
+    margin-top: 0.75rem;
+  }
+
+  .mur-map-hint {
+    position: static;
+    display: block;
+    margin-top: 0.5rem;
+    text-align: center;
+  }
+}
+
+/* the sea under the boat at the top of the article: thin lines drifting sideways */
+.mur-hero-sea {
+  position: absolute;
+  left: -1rem;
+  right: -1rem;
+  /* the top line meets the hull: hero padding + boat height (width × 332/681) − a bit of draught */
+  top: calc(2.5rem + min(78vw, 440px) * 0.4875 - 26px);
+  width: calc(100% + 2rem);
+  height: 120px;
+  overflow: hidden;
+  mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+}
+
+.mur-wave {
+  fill: none;
+  stroke: #e9e3d6;
+  stroke-width: 1.6;
+  vector-effect: non-scaling-stroke;
+  animation: mur-wave-drift 7s linear infinite;
+}
+
+.mur-wave-0 {
+  opacity: 0.25;
+  animation-duration: 11s;
+}
+
+.mur-wave-1 {
+  opacity: 0.4;
+  animation-duration: 8s;
+  animation-direction: reverse;
+}
+
+.mur-wave-2 {
+  opacity: 0.7;
+}
+
+.mur-wave-3 {
+  opacity: 0.45;
+  animation-duration: 9s;
+  animation-direction: reverse;
+}
+
+.mur-wave-4 {
+  opacity: 0.25;
+  animation-duration: 12s;
+}
+
+@keyframes mur-wave-drift {
+  to {
+    transform: translateX(160px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mur-wave {
+    animation: none;
+  }
+}
+
+/* ---- Book of article 909: the same page-turning book (.fb) with photographed pages ---- */
+.fb-photo .fb-front,
+.fb-photo .fb-back {
+  background: #fff;
+}
+
+/* shade at the spine over the photographed page */
+.fb-gloss {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.fb-gloss-right {
+  background: linear-gradient(90deg, rgba(20, 28, 48, 0.22), rgba(20, 28, 48, 0) 12%);
+}
+
+.fb-gloss-left {
+  background: linear-gradient(270deg, rgba(20, 28, 48, 0.22), rgba(20, 28, 48, 0) 12%);
+}
+
+/* the cover itself has no spine shade */
+.fb-photo .fb-leaf-cover .fb-gloss-right {
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0) 4%);
+}
+
+/* closed on the back cover: the book slides back to the middle and only the left page block remains */
+.fb-photo[data-end="true"] .fb-shift {
+  transform: translateX(calc(var(--w) * 0.5));
+}
+
+.fb-photo[data-end="true"] .fb-base-right {
+  opacity: 0;
+}
+
+.fb-photo[data-end="true"] .fb-shadow {
+  width: calc(var(--w) * 1.1);
+}
+
+.fb-photo .fb-base-right {
+  transition: opacity 0.3s ease;
 }

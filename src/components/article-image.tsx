@@ -10,14 +10,27 @@ export function ArticleImage({
   src: string;
   caption?: string;
   alt?: string;
-  fit?: "cover" | "contain" | "natural" | "small" | "plain" | "portrait";
+  fit?: "cover" | "contain" | "natural" | "small" | "plain" | "portrait" | "print" | "float-left" | "float-right";
   /** For the editorial preview, whose pictures are private drafts the image optimizer cannot fetch. */
   unoptimized?: boolean;
 }) {
   const text = alt ?? caption?.split("\n")[0] ?? "";
+  const float = fit === "float-left" || fit === "float-right";
   return (
-    <figure className="my-9">
-      {fit === "portrait" ? (
+    <figure className={float ? `img-float ${fit === "float-left" ? "img-float-left" : "img-float-right"}` : "my-9"}>
+      {float || fit === "print" ? (
+        // archival photo as a print: white margin and a soft shadow, never wider than the scan itself
+        <Image
+          unoptimized={unoptimized}
+          src={src}
+          alt={text}
+          width={0}
+          height={0}
+          quality={90}
+          sizes={float ? "(max-width: 640px) 100vw, 300px" : "(max-width: 520px) 100vw, 420px"}
+          className={`img-print h-auto w-full ${fit === "print" ? "mx-auto max-w-[420px]" : ""}`}
+        />
+      ) : fit === "portrait" ? (
         <Image
           unoptimized={unoptimized}
           src={src}
@@ -75,7 +88,9 @@ export function ArticleImage({
         </div>
       )}
       {caption ? (
-        <figcaption className="mx-auto mt-3 max-w-[34rem] text-center text-sm leading-snug text-muted-foreground">
+        <figcaption
+          className={`mx-auto mt-3 max-w-[34rem] text-sm leading-snug text-muted-foreground ${float ? "text-left" : "text-center"}`}
+        >
           {caption.split("\n").map((line, i) =>
             i === 0 ? (
               <span key={i} className="block">

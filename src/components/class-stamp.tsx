@@ -9,7 +9,8 @@ export function ClassStamp({ label, issue }: { label: string; issue: number }) {
   const ring = `ЛІЦЕЙСЬКИЙ МУДРЕЦЬ • ВИПУСК №${issue} • `;
   return (
     <span className="class-stamp" aria-hidden>
-      <svg viewBox="0 0 100 100">
+      {/* explicit size and ink colour: even without the stylesheet the seal stays small and red */}
+      <svg viewBox="0 0 100 100" width="104" height="104" style={{ color: "#cf2f22" }}>
         <defs>
           <path id={`${id}-ring`} d="M50 50 m-36 0 a36 36 0 1 1 72 0 a36 36 0 1 1 -72 0" />
           {/* speckles where the ink did not take, and slightly rough edges */}

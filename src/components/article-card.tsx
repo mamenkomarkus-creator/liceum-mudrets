@@ -4,6 +4,7 @@ import { CalendarDays, Clock } from "lucide-react";
 import type { Article } from "@/lib/types";
 import { readingMinutes } from "@/lib/data";
 import { nbsp } from "@/lib/typography";
+import { ClassStamp } from "./class-stamp";
 
 export function ArticleCard({ article, priority = false }: { article: Article; priority?: boolean }) {
   return (
@@ -31,7 +32,13 @@ export function ArticleCard({ article, priority = false }: { article: Article; p
         )}
       </div>
 
-      <div className="flex flex-1 flex-col p-5">
+      <div className="relative flex flex-1 flex-col p-5">
+        {article.stamp ? (
+          <>
+            <ClassStamp label={article.stamp} issue={article.issue} />
+            <span className="sr-only">Матеріал {article.stamp} класу.</span>
+          </>
+        ) : null}
         <div className="flex flex-wrap items-center gap-2">
           <span className="inline-block rounded-full bg-primary px-3.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-primary-foreground">
             {article.category}

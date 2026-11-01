@@ -92,5 +92,7 @@ export interface Article {
   ambient?: "upa";
   /** Visual theme of the whole article page, e.g. "mur": dark poster style of the MUR theatre. */
   theme?: "mur";
+  /** Class that wrote the article (e.g. "11-А"); shown as a stamp on its card. */
+  stamp?: string;
   content: string;
 }

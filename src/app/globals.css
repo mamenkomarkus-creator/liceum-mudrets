@@ -2135,3 +2135,45 @@ a:focus-visible .link-sweep {
 .fb-photo .fb-base-right {
   transition: opacity 0.3s ease;
 }
+
+/* Rubber stamp on the cards of articles written by one class (components/class-stamp.tsx). */
+.class-stamp {
+  position: absolute;
+  top: -4.4rem;
+  right: 0.8rem;
+  z-index: 1;
+  width: 6.8rem;
+  height: 6.8rem;
+  padding: 0.3rem;
+  border-radius: 999px;
+  color: #cf2f22;
+  /* a scrap of paper under the seal, so it reads over any photo */
+  background: radial-gradient(closest-side, rgb(255 253 248 / 0.9) 82%, rgb(255 253 248 / 0) 100%);
+  transform: rotate(-14deg);
+  pointer-events: none;
+  /* thump: comes down large and settles on the paper */
+  animation: stamp-in 0.55s cubic-bezier(0.2, 1.4, 0.4, 1) 0.5s both;
+}
+
+.class-stamp svg {
+  width: 100%;
+  height: 100%;
+  font-family: var(--font-sans), Arial, sans-serif;
+}
+
+@keyframes stamp-in {
+  from {
+    opacity: 0;
+    transform: rotate(-4deg) scale(1.7);
+  }
+  to {
+    opacity: 1;
+    transform: rotate(-14deg) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .class-stamp {
+    animation: none;
+  }
+}

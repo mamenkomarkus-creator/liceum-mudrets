@@ -29,10 +29,6 @@ export default function JubileePaperPage() {
       <header className="mt-5 text-center">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Ювілейний випуск №10 · Листопад 2026</p>
         <h1 className="mt-2 font-display text-3xl font-bold leading-tight text-foreground md:text-4xl">Нам 30 років</h1>
-        <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">
-          До Дня ліцею й першого року електронної газети — чотири сторінки «Ліцейського мудреця» формату A3. Гортайте, як справжню
-          газету.
-        </p>
       </header>
       <PaperFlipbook pages={PAPER_10} />
     </div>

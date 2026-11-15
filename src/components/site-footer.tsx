@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, Lock } from "lucide-react";
-import { CATEGORIES, LATEST_ISSUE, getIssueMeta } from "@/lib/data";
+import { CATEGORIES, LATEST_ISSUE, getIssueMeta, issueHref } from "@/lib/data";
 import { ScrollToTop } from "./scroll-to-top";
 
 const LINKS = [
@@ -35,7 +35,7 @@ export function SiteFooter() {
               Заснована у листопаді 1998&nbsp;року. З&nbsp;2025&nbsp;року — в електронному форматі.
             </p>
             <Link
-              href={`/?issue=${LATEST_ISSUE}#read`}
+              href={issueHref(LATEST_ISSUE)}
               className="group mt-6 inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-white transition-[filter] duration-150 ease-out hover:brightness-110"
             >
               Випуск №{LATEST_ISSUE}&nbsp;— {latest.dateLabel}

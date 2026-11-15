@@ -18,12 +18,22 @@ export interface IssueMeta {
   number: number;
   dateLabel: string;
   tagline?: string;
+  /** Issue made as a whole newspaper to leaf through (no separate articles): path of its page. */
+  paper?: string;
 }
 
 // Kept in JSON so that publishing an issue from /redakciya can append to it with a plain commit.
 export const ISSUES: IssueMeta[] = rawIssues;
 
 export const LATEST_ISSUE = Math.max(...ISSUES.map((i) => i.number));
+
+/** Latest issue made of articles: what the home page lists by default. */
+export const LATEST_ARTICLE_ISSUE = Math.max(...ISSUES.filter((i) => !i.paper).map((i) => i.number));
+
+/** Where an issue is read: its newspaper page, or its articles on the home page. */
+export function issueHref(issue: number): string {
+  return getIssueMeta(issue).paper ?? `/?issue=${issue}#read`;
+}
 
 export function getIssueMeta(issue: number): IssueMeta {
   return ISSUES.find((i) => i.number === issue) ?? { number: issue, dateLabel: "" };

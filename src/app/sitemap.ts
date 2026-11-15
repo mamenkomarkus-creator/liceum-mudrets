@@ -12,7 +12,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   ];
 
   const issues: MetadataRoute.Sitemap = ISSUES.map((issue) => ({
-    url: `${SITE_URL}/?issue=${issue.number}`,
+    url: `${SITE_URL}${issue.paper ?? `/?issue=${issue.number}`}`,
     changeFrequency: "monthly",
     priority: 0.6,
   }));

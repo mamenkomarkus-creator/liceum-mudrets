@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, CalendarDays, FileText } from "lucide-react";
+import Image from "next/image";
 import { ISSUES, getArticlesByIssue, getIssueMeta } from "@/lib/data";
 import { nbsp } from "@/lib/typography";
 
@@ -46,6 +47,39 @@ export default function ArchivePage() {
           const issueArticles = getArticlesByIssue(issue.number);
           const ordinal = ORDINALS[issue.number - 1] ?? `${issue.number}-й`;
           const preview = issueArticles.slice(0, 4);
+
+          if (issue.paper) {
+            return (
+              <Link
+                key={issue.number}
+                href={issue.paper}
+                className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card transition-shadow hover:shadow-lg hover:shadow-black/5"
+              >
+                <div className="flex items-center justify-between bg-navy px-5 py-4 text-white">
+                  <span className="inline-flex items-center gap-2 font-display text-xl font-bold">
+                    <CalendarDays size={18} />
+                    №{issue.number}
+                  </span>
+                  <span className="rounded-full bg-[#f5c542] px-3 py-1 text-xs font-semibold text-[#16233b]">Ювілейний</span>
+                </div>
+                <div className="px-5 py-4">
+                  <p className="font-display text-lg font-bold text-foreground">{issue.dateLabel}</p>
+                  <p className="text-sm text-muted-foreground">{ordinal} випуск — газета на 4 сторінки</p>
+                </div>
+                <div className="flex flex-1 items-center justify-center bg-[#e9e4d8] px-5 py-6">
+                  <Image
+                    src={`/gazeta/${issue.number}/page-1.webp`}
+                    alt="Перша сторінка ювілейного випуску"
+                    width={1240}
+                    height={1754}
+                    sizes="180px"
+                    className="h-auto w-40 rotate-[-3deg] shadow-[0_14px_30px_-10px_rgb(0_0_0/0.45)] transition-transform duration-300 group-hover:rotate-0"
+                  />
+                </div>
+                <span className="border-t border-border px-5 py-3 text-sm font-semibold text-primary">Гортати газету →</span>
+              </Link>
+            );
+          }
 
           return (
             <div key={issue.number} className="rounded-xl border border-border bg-card overflow-hidden flex flex-col">

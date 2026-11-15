@@ -2,7 +2,7 @@ import rawArticles from "@/data/articles.json";
 import type { Article } from "./types";
 
 // Server-side access to the articles. Client components import from ./issues instead, which has no article texts.
-export { CATEGORIES, ISSUES, LATEST_ISSUE, getIssueMeta, issueTitle, issueShortMonth, type IssueMeta } from "./issues";
+export { CATEGORIES, ISSUES, LATEST_ISSUE, LATEST_ARTICLE_ISSUE, issueHref, getIssueMeta, issueTitle, issueShortMonth, type IssueMeta } from "./issues";
 
 export const articles = rawArticles as Article[];
 
